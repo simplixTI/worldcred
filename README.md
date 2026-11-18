@@ -7,13 +7,14 @@ Stack: Next.js 16 (App Router, TypeScript, Tailwind 4, motion) · Supabase (Post
 
 ## 1. Executar em sandbox
 
-Pré-requisitos: Node 20+ e npm. Não precisa de Docker: o sandbox usa o projeto Supabase na nuvem já provisionado (`akvmjvtwudiqcrghbfzo`, região São Paulo), com migrations e dados de demonstração aplicados.
+Pré-requisitos: Node 20+ e npm. Não precisa de Docker: o sandbox usa o projeto Supabase na nuvem "World Cred" (`avcmpjqmbcgrzgbajbvj`, us-east-2), com migrations e dados de demonstração aplicados.
 
 ```bash
 npm install
 cp .env.example .env.local
 # edite .env.local e preencha SUPABASE_SERVICE_ROLE_KEY
-# (Supabase Dashboard → Project Settings → API → service_role). Nunca exponha esta chave no cliente.
+# (Supabase Dashboard → Project Settings → API Keys → chave secreta sb_secret_...). Nunca exponha esta chave no cliente.
+# Para aplicar migrations/seed em um projeto novo: SUPABASE_ACCESS_TOKEN=sbp_... node scripts/apply-remote.mjs <ref> --seed
 npm run dev
 # http://localhost:3000
 ```

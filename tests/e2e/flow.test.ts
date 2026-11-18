@@ -62,9 +62,11 @@ describeIf("fluxo ponta a ponta (sandbox)", () => {
     const agent2 = createClient(url, anon, { auth: { persistSession: false } });
     const { error } = await agent2.auth.verifyOtp({ token_hash: s!.properties!.hashed_token, type: "magiclink" });
     expect(error).toBeNull();
-    const { data } = await agent2.from("proposals").select("id").eq("id", proposalId);
+    const { data, error: e1 } = await agent2.from("proposals").select("id").eq("id", proposalId);
+    expect(e1?.message ?? null).toBeNull();
     expect(data).toEqual([]);
-    const { data: cust } = await agent2.from("customers").select("id").eq("id", customerId);
+    const { data: cust, error: e2 } = await agent2.from("customers").select("id").eq("id", customerId);
+    expect(e2?.message ?? null).toBeNull();
     expect(cust).toEqual([]);
     void AGENT2;
   });
@@ -123,8 +125,8 @@ describeIf("fluxo ponta a ponta (sandbox)", () => {
     const { data: q } = await db.from("message_queue").select("id, status").eq("installment_id", installmentId).eq("stage", "D0").single();
     expect(q!.status).toBe("queued");
     const { dispatchDueMessages } = await import("@/lib/services/collections");
-    await db.from("message_queue").update({ scheduled_for: new Date(Date.now() - 1000).toISOString() }).eq("id", q!.id);
-    const r = await dispatchDueMessages(new Date(new Date().setUTCHours(15, 0, 0, 0))); // 12:00 SP
+    await db.from("message_queue").update({ scheduled_for: new Date(Date.now() - 86400_000).toISOString() }).eq("id", q!.id);
+    const r = await dispatchDueMessages(new Date(new Date().setUTCHours(15, 0, 0, 0))); // 12:00 SP (dentro da janela)
     expect(r.outside_window).toBe(false);
     const { data: q2 } = await db.from("message_queue").select("status, attempts, last_error").eq("id", q!.id).single();
     expect(q2!.status).toBe("failed"); expect(q2!.attempts).toBe(1); expect(q2!.last_error).toMatch(/recusou/);
