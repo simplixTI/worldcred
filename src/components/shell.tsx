@@ -15,8 +15,8 @@ export function AppShell({ session, nav, children, portalLabel }: { session: Ses
       <header className="brand-mesh text-white sticky top-0 z-20 shadow-[0_8px_30px_-18px_rgba(6,16,46,0.9)]">
         <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Link href={nav[0]?.href ?? "/"} className="shrink-0 rounded-xl bg-white px-2.5 py-1.5 flex items-center" aria-label="WorldCred — início">
-              <Image src="/logo-wc.png" alt="WorldCred" width={126} height={42} priority className="h-7 w-auto" />
+            <Link href={nav[0]?.href ?? "/"} className="shrink-0 flex items-center" aria-label="WorldCred — início">
+              <Image src="/logo-wc-white.png" alt="WorldCred" width={126} height={42} priority className="h-8 w-auto" />
             </Link>
             <span className="hidden sm:inline text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70 border-l border-white/15 pl-3">{portalLabel}</span>
           </div>

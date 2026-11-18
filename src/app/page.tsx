@@ -36,7 +36,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
     <div className="min-h-dvh bg-bg">
       <header className="absolute inset-x-0 top-0 z-20">
         <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="rounded-xl bg-white px-3 py-1.5 flex items-center" aria-label="WorldCred"><Image src="/logo-wc.png" alt="WorldCred" width={126} height={42} priority className="h-7 w-auto" /></Link>
+          <Link href="/" className="flex items-center" aria-label="WorldCred"><Image src="/logo-wc-white.png" alt="WorldCred" width={126} height={42} priority className="h-8 w-auto" /></Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-white/80">
             <a href="#como-funciona" className="hover:text-white">Como funciona</a>
             <a href="#transparencia" className="hover:text-white">Transparência</a>

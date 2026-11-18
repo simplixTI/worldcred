@@ -15,7 +15,7 @@ export default async function EntrarPage({ searchParams }: { searchParams: Promi
           <span className="orbit inset-32" style={{ animationDuration: "18s" }} />
         </div>
         <div className="relative rise">
-          <div className="inline-flex rounded-2xl bg-white px-4 py-3"><Image src="/logo-wc.png" alt="WorldCred" width={180} height={60} priority className="h-9 w-auto" /></div>
+          <Image src="/logo-wc-white.png" alt="WorldCred" width={180} height={60} priority className="h-10 w-auto" />
         </div>
         <div className="relative max-w-xl">
           <h1 className="rise rise-d1 text-3xl md:text-5xl font-extrabold leading-[1.05] tracking-tight">Crédito com fluxo claro, do aceite ao recibo.</h1>
