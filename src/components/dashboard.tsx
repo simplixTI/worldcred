@@ -26,7 +26,7 @@ export function ReceivablesBar({ segments }: { segments: Segment[] }) {
         {segments.map((s) => (
           <li key={s.key}>
             <Link href={s.href} className="group block rounded-xl px-3 py-2.5 -mx-1 transition-colors hover:bg-bg">
-              <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted"><span className={`w-2 h-2 rounded-full ${DOT[s.tone]}`} aria-hidden />{s.label}</span>
+              <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted whitespace-nowrap"><span className={`w-2 h-2 rounded-full ${DOT[s.tone]}`} aria-hidden />{s.label}</span>
               <span className={`block text-lg font-extrabold tabular-nums mt-0.5 ${s.tone === "danger" && s.cents > 0 ? "text-danger" : "text-navy"}`}><CountUp value={s.cents} kind="brl" /></span>
               <span className="text-[11px] text-muted">{total > 1 ? Math.round((s.cents / total) * 100) : 0}% · ver lista <span className="inline-block transition-transform group-hover:translate-x-0.5">→</span></span>
             </Link>

@@ -35,7 +35,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     { key: "d7", label: "Até 7 dias", cents: d7, href: q("d7"), tone: "green" as const },
     { key: "d15", label: "8 a 15 dias", cents: Math.max(d15 - d7, 0), href: q("d15"), tone: "navy" as const },
     { key: "d30", label: "16 a 30 dias", cents: Math.max(d30 - d15, 0), href: q("d30"), tone: "muted" as const },
-    { key: "depois", label: "Após 30 dias", cents: Math.max(open - d30, 0), href: q("avencer"), tone: "soft" as const },
+    { key: "depois", label: "+30 dias", cents: Math.max(open - d30, 0), href: q("avencer"), tone: "soft" as const },
   ];
   const queues = [
     { href: "/admin/propostas", label: "Aprovações pendentes", count: pend.approvals, Icon: FileCheck2 },
