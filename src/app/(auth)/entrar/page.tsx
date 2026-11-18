@@ -17,12 +17,13 @@ export default async function EntrarPage({ searchParams }: { searchParams: Promi
         <div className="relative rise">
           <div className="inline-flex rounded-2xl bg-white px-4 py-3"><Image src="/logo-wc.png" alt="WorldCred" width={180} height={60} priority className="h-9 w-auto" /></div>
         </div>
-        <div className="relative max-w-md">
+        <div className="relative max-w-xl">
           <h1 className="rise rise-d1 text-3xl md:text-5xl font-extrabold leading-[1.05] tracking-tight">Crédito com fluxo claro, do aceite ao recibo.</h1>
           <p className="rise rise-d2 mt-4 text-white/75 text-base md:text-lg leading-relaxed">Proposta, aceite, desembolso Pix e cobrança automática em um só lugar. Cada etapa registrada, cada centavo conciliado.</p>
-          <ul className="rise rise-d3 mt-6 grid grid-cols-3 gap-3 text-xs text-white/70">
+          <ul className="rise rise-d3 mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-white/70">
             <li className="rounded-xl bg-white/5 ring-1 ring-white/10 p-3"><div className="text-xl font-bold text-white">Pix</div>crédito na conta em minutos</li>
             <li className="rounded-xl bg-white/5 ring-1 ring-white/10 p-3"><div className="text-xl font-bold text-white">Parcelas fixas</div>valor claro, sem surpresas</li>
+            <li className="rounded-xl bg-white/5 ring-1 ring-white/10 p-3"><div className="text-xl font-bold text-white">Cartão</div>crédito com o limite do seu cartão</li>
             <li className="rounded-xl bg-white/5 ring-1 ring-white/10 p-3"><div className="text-xl font-bold text-white">Portal 24h</div>acompanhe e pague quando quiser</li>
           </ul>
         </div>
