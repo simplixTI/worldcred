@@ -3,11 +3,14 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Kpi, PageTitle } from "@/components/ui";
 import { Stagger, Item } from "@/components/motion";
+import { ReferralCard } from "./referral-card";
+import { env } from "@/lib/env";
 import { UserPlus, FileText, Briefcase } from "lucide-react";
 
 export default async function AgentHome() {
   const s = await requireRole(["agent"], { mfa: false });
   const db = await createClient();
+  const { data: me } = await db.from("profiles").select("referral_slug").eq("id", s.userId).maybeSingle();
   const [{ count: customers }, { count: pending }, { data: contracts }] = await Promise.all([
     db.from("agent_customers").select("customer_id", { count: "exact", head: true }),
     db.from("proposals").select("id", { count: "exact", head: true }).in("status", ["sent", "accepted"]),
@@ -39,6 +42,7 @@ export default async function AgentHome() {
         <Item><Kpi label="Propostas em andamento" value={pending ?? 0} href="/agente/propostas" /></Item>
         <Item><Kpi label="Principal ativo" cents={active.reduce((a, c) => a + Number(c.principal_cents), 0)} hint={`${active.length} contrato(s) ativo(s)`} href="/agente/carteira" /></Item>
       </Stagger>
+      {me?.referral_slug && <div className="mt-6"><ReferralCard url={`${env.appUrl}/a/${me.referral_slug}`} /></div>}
     </>
   );
 }

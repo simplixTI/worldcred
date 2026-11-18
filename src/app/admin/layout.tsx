@@ -8,6 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await requireRole(["admin"], { mfa: true });
   const nav = [
     { href: "/admin", label: "Painel" },
+    { href: "/admin/leads", label: "Leads" },
     { href: "/admin/propostas", label: "Aprovações" },
     { href: "/admin/desembolsos", label: "Desembolsos" },
     { href: "/admin/cobranca", label: "Fila de cobrança" },

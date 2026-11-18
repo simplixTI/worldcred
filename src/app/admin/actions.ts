@@ -92,3 +92,13 @@ export const simExpire = wrap(async (reference: string) => { await admin(); cons
 export const simRefund = wrap(async (e2e: string, amountCents: number) => { await admin(); const e = await mockPix().simulateRefund(e2e, amountCents); return postWebhook(e.raw, e.signature); }, ["/admin/sandbox", "/admin/conciliacao"]);
 export const simBadSignature = wrap(async (reference: string) => { await admin(); const e = mockPix().signEvent({ eventId: `evt_bad_${Date.now()}`, kind: "charge.paid", reference, amountCents: 1 }); return postWebhook(e.raw, "assinatura-invalida"); }, ["/admin/sandbox"]);
 export const simPayoutWebhook = wrap(async (reference: string) => { await admin(); const e = await mockPix().simulatePayoutWebhook(reference); return postWebhook(e.raw, e.signature); }, ["/admin/sandbox", "/admin/desembolsos"]);
+
+// ---------- Leads ----------
+export const assignLead = wrap(async (leadId: string, agentId: string) => {
+  const s = await admin();
+  const r = await rpc<{ customer_id: string; reused?: boolean }>("wc_assign_lead", { p_lead: leadId, p_agent: agentId, p_actor: s.userId });
+  const { inviteCustomer } = await import("@/lib/services/customers");
+  const inv = await inviteCustomer(r.customer_id).catch(() => null);
+  return r.reused ? "Cliente já existia; vinculado à carteira do agente." : inv ? `Cliente criado e convite ${inv.sms.ok ? "enviado por SMS" : "gerado (SMS falhou)"}.` : "Cliente criado na carteira do agente.";
+}, ["/admin/leads"]);
+export const discardLead = wrap(async (leadId: string, note: string) => { const s = await admin(); await rpc("wc_discard_lead", { p_lead: leadId, p_actor: s.userId, p_note: note }); return "Lead descartado."; }, ["/admin/leads"]);
