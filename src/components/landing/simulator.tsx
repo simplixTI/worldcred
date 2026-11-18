@@ -15,7 +15,6 @@ export function Simulator({ products, sims }: { products: SimProduct[]; sims: Si
   const [term, setTerm] = useState(product?.terms.includes(10) ? 10 : product?.terms[0] ?? 0);
   const row = useMemo(() => sims.find((s) => s.principal === principal && s.term === term), [sims, principal, term]);
   const reduce = useReducedMotion();
-  const fmt = (n: number) => formatBRL(n);
 
   useEffect(() => {
     try { window.dispatchEvent(new CustomEvent(SELECTION_EVENT, { detail: { principal, term } })); } catch { /* noop */ }
@@ -59,7 +58,7 @@ export function Simulator({ products, sims }: { products: SimProduct[]; sims: Si
                 <div className="text-4xl md:text-[44px] font-extrabold tabular-nums leading-none mt-1">
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.span key={`${row.principal}-${row.term}`} initial={reduce ? false : { opacity: 0, y: 10, filter: "blur(6px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -10, filter: "blur(6px)" }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="inline-block">
-                      <CountUp value={row.installment} format={fmt} duration={0.6} />
+                      <CountUp value={row.installment} kind="brl" duration={0.6} />
                     </motion.span>
                   </AnimatePresence>
                 </div>

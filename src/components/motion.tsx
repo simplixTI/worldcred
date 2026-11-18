@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, useInView, animate, AnimatePresence } from "motion/react";
+import { formatBRL } from "@/lib/finance/money";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -22,18 +23,19 @@ export function Item({ children, className = "" }: { children: React.ReactNode; 
   );
 }
 
-/** Número que conta até o valor final quando entra na tela (formatador injetado). */
-export function CountUp({ value, format, duration = 0.9 }: { value: number; format: (n: number) => string; duration?: number }) {
+/** Número que conta até o valor final quando entra na tela. `kind` é serializável (pode vir de Server Components). */
+export function CountUp({ value, kind = "int", duration = 0.9 }: { value: number; kind?: "brl" | "int"; duration?: number }) {
+  const format = kind === "brl" ? formatBRL : (n: number) => n.toLocaleString("pt-BR");
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-10% 0px" });
   const reduce = useReducedMotion();
   const [display, setDisplay] = useState(() => format(reduce ? value : 0));
   useEffect(() => {
     if (!inView) return;
-    // com movimento reduzido, a "animação" dura 0s e apenas aplica o valor final
     const controls = animate(reduce ? value : 0, value, { duration: reduce ? 0 : duration, ease: EASE, onUpdate: (v) => setDisplay(format(Math.round(v))) });
     return () => controls.stop();
-  }, [inView, value, reduce, duration, format]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inView, value, reduce, duration, kind]);
   return <span ref={ref} className="tabular-nums">{display}</span>;
 }
 

@@ -85,13 +85,11 @@ export function Empty({ children }: { children: React.ReactNode }) {
   );
 }
 
-const fmtBRL = (n: number) => formatBRL(n);
-
 export function Kpi({ label, value, hint, href, cents }: { label: string; value?: React.ReactNode; hint?: string; href?: string; cents?: number | string }) {
   const inner = (
     <>
       <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{label}</span>
-      <span className="text-[22px] md:text-2xl font-extrabold text-navy tabular-nums leading-tight">{cents !== undefined ? <CountUp value={Number(cents)} format={fmtBRL} /> : value}</span>
+      <span className="text-[22px] md:text-2xl font-extrabold text-navy tabular-nums leading-tight">{cents !== undefined ? <CountUp value={Number(cents)} kind="brl" /> : value}</span>
       {hint && <span className="text-xs text-muted">{hint}</span>}
     </>
   );
