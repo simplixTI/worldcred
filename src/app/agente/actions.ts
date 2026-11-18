@@ -5,6 +5,8 @@ import { assertRole } from "@/lib/auth";
 import { registerCustomer, inviteCustomer } from "@/lib/services/customers";
 import { createAndSendProposal } from "@/lib/services/proposals";
 import { rpc } from "@/lib/supabase/admin";
+import { lookupCpf, type CpfLookupResult } from "@/lib/services/cpf-lookup";
+import { isValidCPF } from "@/lib/utils/mask";
 
 export type ActionState = { error?: string; ok?: string } | undefined;
 
@@ -52,4 +54,13 @@ export async function agentCaseAction(caseId: string, action: "take" | "resolve"
     revalidatePath("/agente/casos");
     return { ok: "Atualizado." };
   } catch (e) { return { error: (e as Error).message }; }
+}
+
+/** Consulta cadastral por CPF (somente agente/admin). Nunca lança; o formulário cai no preenchimento manual. */
+export async function lookupCpfAction(cpf: string): Promise<CpfLookupResult | { error: string }> {
+  try { await assertRole(["agent", "admin"], { mfa: false }); } catch { return { error: "sessão inválida" }; }
+  if (!isValidCPF(cpf)) return { error: "CPF inválido" };
+  const r = await lookupCpf(cpf);
+  await rpc("wc_audit", { p_action: "customer.cpf_lookup", p_entity: "customers", p_entity_id: null, p_meta: { available: r.available, found: r.found } }).catch(() => {});
+  return r;
 }
