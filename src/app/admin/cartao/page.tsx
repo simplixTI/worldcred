@@ -2,7 +2,7 @@ import { PageTitle, Alert, Money, StatusBadge, Empty } from "@/components/ui";
 import { getSetting } from "@/lib/services/settings";
 import { adminClient } from "@/lib/supabase/admin";
 import { ActionButton } from "@/components/action-button";
-import { saveSettings } from "../actions";
+import { toggleCardModality } from "../actions";
 
 export default async function AdminCartao() {
   const card = await getSetting("card", { enabled: false, provider: null as string | null, integration_approved: false });
@@ -14,7 +14,7 @@ export default async function AdminCartao() {
         <div className="card p-4 text-sm space-y-3">
           <div className="flex items-center justify-between"><span>Status da modalidade</span><StatusBadge status={card.enabled ? "active" : "cancelled"} overrideLabel={card.enabled ? "Ativa" : "Desativada"} /></div>
           <p className="text-muted">Provedor: {card.provider ?? "não configurado"} · Integração aprovada: {card.integration_approved ? "sim" : "não"}</p>
-          <ActionButton label={card.enabled ? "Desativar modalidade" : "Ativar modalidade"} className={card.enabled ? "btn-danger" : "btn-green"} confirm={card.enabled ? undefined : "Ativar somente com integração oficial aprovada (checkout hospedado ou tokenização). Confirmar?"} onRun={async () => { if (!card.enabled && !card.integration_approved && process.env.NODE_ENV === "production") return { error: "bloqueado: integração não aprovada" }; return saveSettings("card", { ...card, enabled: !card.enabled }); }} />
+          <ActionButton label={card.enabled ? "Desativar modalidade" : "Ativar modalidade"} className={card.enabled ? "btn-danger" : "btn-green"} confirm={card.enabled ? undefined : "Ativar somente com integração oficial aprovada (checkout hospedado ou tokenização). Confirmar?"} action={toggleCardModality} args={[]} />
           <Alert kind="info">Regras: cartão completo e CVV nunca entram no sistema (checkout hospedado/tokenização do parceiro); desembolso Pix vinculado à liquidação do parceiro e protegido por referência única; quando a dívida é paga na fatura, não há parcelas Pix de cobrança.</Alert>
         </div>
         <div className="card overflow-x-auto">

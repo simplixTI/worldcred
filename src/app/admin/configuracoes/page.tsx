@@ -21,7 +21,7 @@ export default async function AdminConfiguracoes() {
             <h2 className="font-semibold text-navy">Segurança</h2>
             <p>MFA imposto para admin/desembolso (banco): <b>{security.mfa_enforced ? "sim" : "não"}</b> · variável MFA_ENFORCEMENT: <b>{env.mfaEnforcement}</b></p>
             <p className="text-xs text-muted">Com MFA imposto, admin e desembolso exigem código do autenticador a cada sessão. Ligue antes de operar com dinheiro real.</p>
-            <ActionButton label={security.mfa_enforced ? "Desligar exigência de MFA" : "Ligar exigência de MFA"} className={security.mfa_enforced ? "btn-danger" : "btn-green"} confirm={security.mfa_enforced ? "Desligar o MFA para administradores?" : "Ligar o MFA? Todos os admins precisarão cadastrar o autenticador no próximo acesso."} onRun={() => saveSettings("security", { mfa_enforced: !security.mfa_enforced })} />
+            <ActionButton label={security.mfa_enforced ? "Desligar exigência de MFA" : "Ligar exigência de MFA"} className={security.mfa_enforced ? "btn-danger" : "btn-green"} confirm={security.mfa_enforced ? "Desligar o MFA para administradores?" : "Ligar o MFA? Todos os admins precisarão cadastrar o autenticador no próximo acesso."} action={saveSettings} args={["security", { mfa_enforced: !security.mfa_enforced }]} />
           </div>
           <div className="card p-4 text-sm space-y-1">
             <h2 className="font-semibold text-navy">Credor responsável</h2>

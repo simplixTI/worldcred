@@ -22,10 +22,10 @@ export default async function AdminConciliacao() {
               <td>{i ? <>{i.contracts.customers.full_name}<div className="text-xs text-muted">{i.contracts.number} · {i.number}ª · saldo <Money cents={i.amount_cents - i.paid_cents} /></div></> : <span className="text-muted">—</span>}</td>
               <td className="text-xs">{formatDateTimeBR(p.paid_at)}</td><td className="text-xs text-muted">{it.note}</td>
               <td><div className="flex flex-col gap-1">
-                {i && it.reason !== "refund" && <ActionButton label="Aplicar à parcela" className="btn-green !py-1.5 !px-3 text-xs" onRun={(n) => resolveReconciliation(it.id, "apply", n)} prompt="Justificativa (auditada):" />}
-                {!i && <ActionButton label="Vincular a parcela (ID)" onRun={async (n) => { if (!n) return { error: "informe o ID" }; return linkPayment(it.id, n); }} prompt="ID da parcela (UUID):" />}
-                <ActionButton label="Registrar ciência" onRun={(n) => resolveReconciliation(it.id, "acknowledge", n)} prompt="Observação:" />
-                <ActionButton label="Rejeitar" className="btn-danger !py-1.5 !px-3 text-xs" onRun={(n) => resolveReconciliation(it.id, "reject", n)} prompt="Motivo:" />
+                {i && it.reason !== "refund" && <ActionButton label="Aplicar à parcela" className="btn-green !py-1.5 !px-3 text-xs" action={resolveReconciliation} args={[it.id, "apply"]} prompt="Justificativa (auditada):" />}
+                {!i && <ActionButton label="Vincular a parcela (ID)" action={linkPayment} args={[it.id]} prompt="ID da parcela (UUID):" />}
+                <ActionButton label="Registrar ciência" action={resolveReconciliation} args={[it.id, "acknowledge"]} prompt="Observação:" />
+                <ActionButton label="Rejeitar" className="btn-danger !py-1.5 !px-3 text-xs" action={resolveReconciliation} args={[it.id, "reject"]} prompt="Motivo:" />
               </div></td></tr>
           ); })}</tbody></table></div>
       )}

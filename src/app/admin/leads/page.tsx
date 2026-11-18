@@ -25,7 +25,7 @@ export default async function AdminLeads() {
           <tbody>{open.map((l) => (
             <tr key={l.id}><td className="text-xs text-muted">{formatDateTimeBR(l.created_at)}</td><td className="font-semibold">{l.full_name}{l.email && <div className="text-xs text-muted">{l.email}</div>}</td><td className="font-mono text-xs">{maskCPF(l.cpf)}</td><td className="text-xs">{maskPhone(l.phone)}</td><td>{l.amount_cents ? <><Money cents={l.amount_cents} /> em {l.term_months}x</> : "—"}</td><td className="text-xs">{l.source_slug ?? "site"}</td>
               <td><AssignSelect leadId={l.id} agents={agents ?? []} act={assignLead} /></td>
-              <td><ActionButton label="Descartar" className="btn-danger !py-1 !px-2 text-xs" prompt="Motivo:" onRun={(n) => discardLead(l.id, n ?? "")} /></td></tr>
+              <td><ActionButton label="Descartar" className="btn-danger !py-1 !px-2 text-xs" prompt="Motivo:" action={discardLead} args={[l.id]} /></td></tr>
           ))}</tbody></table></div>
       )}
       <h2 className="font-semibold text-navy mb-2">Histórico</h2>

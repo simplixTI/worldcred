@@ -102,3 +102,13 @@ export const assignLead = wrap(async (leadId: string, agentId: string) => {
   return r.reused ? "Cliente já existia; vinculado à carteira do agente." : inv ? `Cliente criado e convite ${inv.sms.ok ? "enviado por SMS" : "gerado (SMS falhou)"}.` : "Cliente criado na carteira do agente.";
 }, ["/admin/leads"]);
 export const discardLead = wrap(async (leadId: string, note: string) => { const s = await admin(); await rpc("wc_discard_lead", { p_lead: leadId, p_actor: s.userId, p_note: note }); return "Lead descartado."; }, ["/admin/leads"]);
+
+export const toggleCardModality = wrap(async () => {
+  await admin();
+  const { data } = await adminClient().from("settings").select("value").eq("key", "card").maybeSingle();
+  const card = (data?.value as { enabled?: boolean; integration_approved?: boolean; provider?: string | null }) ?? { enabled: false, integration_approved: false, provider: null };
+  if (!card.enabled && !card.integration_approved && process.env.NODE_ENV === "production") throw new Error("bloqueado: ative somente com integração oficial aprovada (marque integration_approved nas configurações)");
+  const r = await saveSettings("card", { ...card, enabled: !card.enabled });
+  if (r?.error) throw new Error(r.error);
+  return card.enabled ? "Modalidade cartão desativada." : "Modalidade cartão ativada.";
+}, ["/admin/cartao"]);

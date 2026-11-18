@@ -12,7 +12,7 @@ export default async function AdminDesembolsos() {
   const done = (data ?? []).filter((d) => d.status === "confirmed");
   return (
     <>
-      <PageTitle title="Autorização de desembolso" subtitle="Exige MFA. A liberação requer chave Pix validada e usa referência única por envio." action={<ActionButton label="Consultar pendentes no provedor" onRun={() => runReconcile()} />} />
+      <PageTitle title="Autorização de desembolso" subtitle="Exige MFA. A liberação requer chave Pix validada e usa referência única por envio." action={<ActionButton label="Consultar pendentes no provedor" action={runReconcile} args={[]} />} />
       <Alert kind="info">Em caso de tempo limite ou resposta ambígua, o sistema não reenvia: consulta o provedor pela referência antes de qualquer nova tentativa.</Alert>
       <div className="mt-4">
       {!pending.length ? <Empty>Nenhum desembolso pendente.</Empty> : (
@@ -21,10 +21,10 @@ export default async function AdminDesembolsos() {
             <tr key={d.id}><td>{c.number}</td><td>{c.customers.full_name}</td><td><Money cents={d.amount_cents} /></td><td><span className="font-mono text-xs">{maskPixKey(d.pix_key)}</span> <StatusBadge status={c.customers.pix_key_status} /></td>
               <td><StatusBadge status={d.status} />{d.last_error && <div className="text-xs text-danger">{d.last_error}</div>}<div className="text-xs text-muted">{d.attempts} tentativa(s)</div></td><td className="font-mono text-xs">{d.reference}</td>
               <td><div className="flex flex-col gap-1">
-                {d.status === "pending" && <ActionButton label="Autorizar e enviar Pix" className="btn-green !py-1.5 !px-3 text-xs" confirm={`Autorizar o envio de ${(Number(d.amount_cents) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} para a chave do cliente?`} onRun={() => authorizeDisbursement(d.id)} />}
-                {["authorized"].includes(d.status) && <ActionButton label="Enviar Pix" className="btn-green !py-1.5 !px-3 text-xs" onRun={() => authorizeDisbursement(d.id)} />}
-                {["sent", "timeout"].includes(d.status) && <ActionButton label="Consultar status" onRun={() => consultDisbursement(d.id)} />}
-                {d.status === "failed" && <ActionButton label="Nova tentativa (nova referência)" onRun={() => retryDisbursement(c.id)} confirm="Gerar nova referência e reenviar? O sistema confirma antes que a anterior não foi liquidada." />}
+                {d.status === "pending" && <ActionButton label="Autorizar e enviar Pix" className="btn-green !py-1.5 !px-3 text-xs" confirm={`Autorizar o envio de ${(Number(d.amount_cents) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} para a chave do cliente?`} action={authorizeDisbursement} args={[d.id]} />}
+                {["authorized"].includes(d.status) && <ActionButton label="Enviar Pix" className="btn-green !py-1.5 !px-3 text-xs" action={authorizeDisbursement} args={[d.id]} />}
+                {["sent", "timeout"].includes(d.status) && <ActionButton label="Consultar status" action={consultDisbursement} args={[d.id]} />}
+                {d.status === "failed" && <ActionButton label="Nova tentativa (nova referência)" action={retryDisbursement} args={[c.id]} confirm="Gerar nova referência e reenviar? O sistema confirma antes que a anterior não foi liquidada." />}
               </div></td></tr>
           ); })}</tbody></table></div>
       )}

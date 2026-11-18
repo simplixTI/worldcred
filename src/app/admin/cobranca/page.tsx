@@ -22,7 +22,7 @@ export default async function AdminCobranca({ searchParams }: { searchParams: Pr
   for (const m of queue ?? []) if (!lastMsg.has(m.installment_id)) lastMsg.set(m.installment_id, m);
   return (
     <>
-      <PageTitle title="Fila de cobrança" subtitle="Régua D0 / D+3 / D+7 por SMS; caso aberto em D+10. Separação por motivo." action={<ActionButton label="Executar régua agora" onRun={() => runCollections()} />} />
+      <PageTitle title="Fila de cobrança" subtitle="Régua D0 / D+3 / D+7 por SMS; caso aberto em D+10. Separação por motivo." action={<ActionButton label="Executar régua agora" action={runCollections} args={[]} />} />
       <div className="flex gap-2 mb-4 flex-wrap text-sm">
         <a href="/admin/cobranca" className={`badge ${!sp.tipo ? "bg-navy text-white" : "bg-surface border border-line"}`}>Todos ({cases?.length ?? 0})</a>
         {Object.entries(groups).map(([k, v]) => <a key={k} href={`/admin/cobranca?tipo=${k}`} className={`badge ${sp.tipo === k ? "bg-navy text-white" : "bg-surface border border-line"}`}>{v} ({(cases ?? []).filter((c) => groupOf(c.reason) === k).length})</a>)}
@@ -40,7 +40,7 @@ export default async function AdminCobranca({ searchParams }: { searchParams: Pr
         <>
           <h2 className="font-semibold text-navy mb-2">Solicitações “Já paguei” aguardando conferência</h2>
           <div className="card overflow-x-auto mb-6"><table className="table"><thead><tr><th>Cliente</th><th>Parcela</th><th>Valor</th><th>Observação</th><th>Quando</th><th></th></tr></thead>
-            <tbody>{claims.map((c) => <tr key={c.id}><td>{(c.customers as unknown as { full_name: string }).full_name}</td><td>{(c.installments as unknown as { number: number }).number}ª</td><td><Money cents={(c.installments as unknown as { amount_cents: number }).amount_cents} /></td><td className="text-xs">{c.note || "—"}</td><td className="text-xs text-muted">{formatDateTimeBR(c.created_at)}</td><td className="flex gap-1"><ActionButton label="Pagamento não localizado" className="btn-danger !py-1.5 !px-3 text-xs" onRun={(n) => reviewClaim(c.id, false, n)} prompt="Observação para o cliente:" /></td></tr>)}</tbody></table></div>
+            <tbody>{claims.map((c) => <tr key={c.id}><td>{(c.customers as unknown as { full_name: string }).full_name}</td><td>{(c.installments as unknown as { number: number }).number}ª</td><td><Money cents={(c.installments as unknown as { amount_cents: number }).amount_cents} /></td><td className="text-xs">{c.note || "—"}</td><td className="text-xs text-muted">{formatDateTimeBR(c.created_at)}</td><td className="flex gap-1"><ActionButton label="Pagamento não localizado" className="btn-danger !py-1.5 !px-3 text-xs" action={reviewClaim} args={[c.id, false]} prompt="Observação para o cliente:" /></td></tr>)}</tbody></table></div>
           <p className="text-xs text-muted -mt-4 mb-6">A confirmação financeira só ocorre via webhook do provedor ou por conciliação auditada; esta tela apenas encerra a pausa quando nada é localizado.</p>
         </>
       )}

@@ -20,7 +20,7 @@ export default async function AdminPropostas() {
             <tr key={p.id}><td>#{p.number}</td><td>{c.full_name}<div className="text-xs text-muted">{maskCPF(c.cpf)}</div></td><td>{(p.profiles as unknown as { full_name: string })?.full_name}</td>
               <td><Money cents={p.principal_cents} /> · {p.term_months}x de <Money cents={s.regular_installment_cents} /><div className="text-xs text-muted">CET {(Number(s.cet_monthly) * 100).toFixed(2)}% a.m. · líquido <Money cents={s.net_cents} /></div></td>
               <td><StatusBadge status={c.pix_key_status} /></td><td className="text-muted text-xs">{formatDateTimeBR(p.accepted_at)}<div>IP {(p.acceptance_evidence as { ip?: string })?.ip ?? "—"}</div></td>
-              <td><div className="flex gap-1"><ActionButton label="Aprovar" className="btn-green !py-1.5 !px-3 text-xs" onRun={(n) => approveProposal(p.id, n ?? "")} prompt="Observação (opcional):" /><ActionButton label="Recusar" className="btn-danger !py-1.5 !px-3 text-xs" onRun={(n) => declineProposal(p.id, n ?? "")} prompt="Motivo da recusa:" /></div></td></tr>
+              <td><div className="flex gap-1"><ActionButton label="Aprovar" className="btn-green !py-1.5 !px-3 text-xs" action={approveProposal} args={[p.id]} prompt="Observação (opcional):" /><ActionButton label="Recusar" className="btn-danger !py-1.5 !px-3 text-xs" action={declineProposal} args={[p.id]} prompt="Motivo da recusa:" /></div></td></tr>
           ); })}</tbody></table></div>
       )}
       <h2 className="font-semibold text-navy mb-2">Histórico recente</h2>
