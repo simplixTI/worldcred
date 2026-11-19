@@ -19,6 +19,7 @@ export const env = {
     if (v === "off" && process.env.NODE_ENV === "production") return "on";
     return v === "off" ? "off" : "on";
   },
-  get isSandbox() { return (process.env.PIX_PROVIDER || "mock") === "mock"; },
+  get isSandbox() { return ["mock", "mercadopago"].includes(process.env.PIX_PROVIDER || "mock"); },
+  get chargesAreReal() { return (process.env.PIX_PROVIDER || "mock") !== "mock"; },
   get linkSecret() { return process.env.PORTAL_LINK_SECRET || req("CRON_SECRET"); },
 };

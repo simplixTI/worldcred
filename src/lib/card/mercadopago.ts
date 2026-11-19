@@ -29,7 +29,7 @@ export async function createPreference(input: PreferenceInput): Promise<{ id: st
       payment_methods: { installments: input.installments, default_installments: input.installments, excluded_payment_types: [{ id: "ticket" }, { id: "bank_transfer" }, { id: "atm" }] },
       back_urls: { success: `${input.backUrl}?status=success`, pending: `${input.backUrl}?status=pending`, failure: `${input.backUrl}?status=failure` },
       auto_return: "approved",
-      notification_url: input.notificationUrl,
+      ...(input.notificationUrl.startsWith("https://") ? { notification_url: input.notificationUrl } : {}),
       external_reference: input.externalReference,
       statement_descriptor: "WORLDCRED",
       binary_mode: true,
@@ -82,7 +82,7 @@ export async function createTokenPayment(input: TokenPaymentInput): Promise<MpPa
       payment_method_id: input.paymentMethodId, issuer_id: input.issuerId ? Number(input.issuerId) : undefined,
       payer: { email: input.payerEmail, identification: input.payerIdNumber ? { type: input.payerIdType ?? "CPF", number: input.payerIdNumber } : undefined },
       description: input.description, external_reference: input.externalReference, statement_descriptor: "WORLDCRED",
-      notification_url: input.notificationUrl, binary_mode: true,
+      ...(input.notificationUrl.startsWith("https://") ? { notification_url: input.notificationUrl } : {}), binary_mode: true,
     }),
   });
   const j = await res.json();

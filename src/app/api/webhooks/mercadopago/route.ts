@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { verifyWebhookSignature } from "@/lib/card/mercadopago";
 import { syncCardPayment } from "@/lib/services/card";
+import { syncPixPayment } from "@/lib/services/mp-pix";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
   if (!valid) return NextResponse.json({ error: "assinatura inválida" }, { status: 401 });
   if (type !== "payment" || !dataId) return NextResponse.json({ outcome: "ignored" });
   try {
-    const result = await syncCardPayment(dataId);
+    const result = await syncPixPayment(dataId).then((r) => (r.outcome === "not_pix" ? syncCardPayment(dataId) : r));
     if (ev) await db.from("provider_events").update({ processed_at: new Date().toISOString(), result }).eq("id", ev.id);
     return NextResponse.json(result);
   } catch (e) {

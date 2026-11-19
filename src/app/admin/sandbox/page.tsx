@@ -16,10 +16,10 @@ export default async function Sandbox() {
   ]);
   return (
     <>
-      <PageTitle title="Simulador do provedor Pix (sandbox)" subtitle="Dispara eventos assinados contra o webhook real da aplicação. Disponível apenas com PIX_PROVIDER=mock." action={<div className="flex gap-2"><ActionButton label="Rodar régua" action={runCollections} args={[]} /><ActionButton label="Rodar conciliação" action={runReconcile} args={[]} /></div>} />
+      <PageTitle title="Simulador do provedor Pix (sandbox)" subtitle={env.chargesAreReal ? "Cobranças reais via Mercado Pago; desembolso (Pix de saída) simulado até a conta Inter." : "Dispara eventos assinados contra o webhook real da aplicação. Disponível apenas com PIX_PROVIDER=mock."} action={<div className="flex gap-2"><ActionButton label="Rodar régua" action={runCollections} args={[]} /><ActionButton label="Rodar conciliação" action={runReconcile} args={[]} /></div>} />
       <Alert kind="info">Gatilhos: chave Pix com “timeout” → tempo limite no desembolso (consulta posterior confirma); “falha” → desembolso recusado; “invalida” → chave rejeitada. Telefone terminado em 0000 → SMS falha.</Alert>
       <h2 className="font-semibold text-navy mt-4 mb-2">Cobranças</h2>
-      {!charges?.length ? <Empty>Nenhuma cobrança emitida. Abra uma parcela no portal do cliente para gerar o QR.</Empty> : (
+      {env.chargesAreReal ? <Alert kind="success">As cobranças Pix das parcelas são reais (Mercado Pago). Pague o QR com qualquer banco e a baixa chega pelo webhook. Abaixo, só o desembolso continua simulado.</Alert> : !charges?.length ? <Empty>Nenhuma cobrança emitida. Abra uma parcela no portal do cliente para gerar o QR.</Empty> : (
         <div className="card overflow-x-auto mb-6"><table className="table"><thead><tr><th>Referência</th><th>Cliente / parcela</th><th>Valor</th><th>Status</th><th>Expira</th><th>Ações</th></tr></thead>
           <tbody>{charges.map((c) => { const i = c.installments as unknown as { number: number; amount_cents: number; paid_cents: number; status: string; contracts: { number: string; customers: { full_name: string } } }; const bal = i.amount_cents - i.paid_cents; return (
             <tr key={c.id}><td className="font-mono text-xs">{c.reference}</td><td>{i.contracts.customers.full_name}<div className="text-xs text-muted">{i.contracts.number} · {i.number}ª <StatusBadge status={i.status} /></div></td><td><Money cents={c.amount_cents} /></td><td><StatusBadge status={c.status} /></td><td className="text-xs">{formatDateTimeBR(c.expires_at)}</td>

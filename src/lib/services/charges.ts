@@ -19,7 +19,7 @@ export async function getOrCreateCharge(installmentId: string, actorId?: string)
   if (inst.status === "paid" || inst.status === "cancelled") throw new Error("parcela não está aberta");
   const balance = Number(inst.amount_cents) - Number(inst.paid_cents);
   const { data: active } = await db.from("pix_charges").select("*").eq("installment_id", installmentId).eq("status", "active").maybeSingle();
-  if (active && new Date(active.expires_at) > new Date(Date.now() + 60_000) && Number(active.amount_cents) === balance) {
+  if (active && active.provider === pixProvider().name && new Date(active.expires_at) > new Date(Date.now() + 60_000) && Number(active.amount_cents) === balance) {
     return withQr(active as ChargeView);
   }
   const { count } = await db.from("pix_charges").select("id", { count: "exact", head: true }).eq("installment_id", installmentId);

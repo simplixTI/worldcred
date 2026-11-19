@@ -85,3 +85,22 @@ export async function payCardAction(operationId: string, form: { token: string; 
     return { status: r.status, detail: r.status_detail };
   } catch (e) { return { error: (e as Error).message }; }
 }
+
+/** Cliente já cadastrado pede um novo crédito padrão: gera a proposta (vinculada ao agente que o indicou, se houver). */
+export async function requestLoanAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const s = await assertRole(["client"], { mfa: false });
+  const supabase = await createClient();
+  const { data: me } = await supabase.from("customers").select("id").maybeSingle();
+  if (!me) return { error: "cadastro não encontrado" };
+  const { data: open } = await supabase.from("proposals").select("id").in("status", ["sent", "accepted", "approved"]).limit(1);
+  if (open && open.length) return { error: "Você já tem uma proposta em andamento." };
+  let id: string;
+  try {
+    const { adminClient } = await import("@/lib/supabase/admin");
+    const { createAndSendProposal } = await import("@/lib/services/proposals");
+    const { data: link } = await adminClient().from("agent_customers").select("agent_id").eq("customer_id", me.id).order("created_at").limit(1).maybeSingle();
+    const r = await createAndSendProposal(link?.agent_id ?? null, me.id, String(formData.get("product_version_id")), Number(formData.get("term_months")), { skipSms: true });
+    id = r.proposalId;
+  } catch (e) { return { error: (e as Error).message }; }
+  redirect(`/cliente/propostas/${id}?nova=1`);
+}

@@ -26,6 +26,7 @@ export default async function ClienteHome() {
           <Link href={`/cliente/propostas/${p.id}`} className="btn-green">Ler e aceitar</Link>
         </div>
       ))}
+      {!pending.length && <div className="card p-4 mb-4 border-green/40 flex flex-wrap items-center justify-between gap-3"><div><div className="font-bold text-navy">Precisa de crédito?</div><div className="text-sm text-muted">De R$ 1.000 a R$ 10.000 em parcelas fixas, com Pix na sua conta.</div></div><Link href="/cliente/credito" className="btn-green">Pedir crédito</Link></div>}
       {cardLive && <div className="card p-4 mb-4 flex flex-wrap items-center justify-between gap-3"><div><div className="font-bold text-navy">Crédito com o cartão</div><div className="text-sm text-muted">Pague no cartão em até 12x e receba o valor via Pix.</div></div><Link href="/cliente/cartao" className="btn-outline">Simular</Link></div>}
       <h2 className="font-semibold text-navy mb-2">Próximas parcelas</h2>
       {!upcoming.length ? <Empty>Nenhuma parcela em aberto.</Empty> : (
