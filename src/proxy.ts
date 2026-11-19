@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC = ["/entrar", "/l/", "/a/", "/api/webhooks", "/api/cron", "/convite", "/_next", "/favicon", "/logo", "/api/health"];
+const PUBLIC = ["/entrar", "/cadastro", "/l/", "/a/", "/api/webhooks", "/api/cron", "/convite", "/_next", "/favicon", "/logo", "/api/health"];
 
 /** Renova a sessão Supabase e protege rotas por autenticação. Autorização por perfil ocorre em cada layout. */
 export async function proxy(request: NextRequest) {

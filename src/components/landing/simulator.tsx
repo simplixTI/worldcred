@@ -9,7 +9,7 @@ export interface SimRow { principal: number; term: number; installment: number; 
 
 export const SELECTION_EVENT = "wc:selection";
 
-export function Simulator({ products, sims }: { products: SimProduct[]; sims: SimRow[] }) {
+export function Simulator({ products, sims, refSlug = "" }: { products: SimProduct[]; sims: SimRow[]; refSlug?: string }) {
   const [principal, setPrincipal] = useState(products[1]?.principal ?? products[0]?.principal ?? 0);
   const product = products.find((p) => p.principal === principal) ?? products[0];
   const [term, setTerm] = useState(product?.terms.includes(10) ? 10 : product?.terms[0] ?? 0);
@@ -76,7 +76,7 @@ export function Simulator({ products, sims }: { products: SimProduct[]; sims: Si
             </dl>
           </div>
         )}
-        <a href="#quero-credito" className="btn-green w-full mt-4 !py-3 text-base">Quero este crédito</a>
+        <a href={`/cadastro?valor=${principal}&prazo=${term}${refSlug ? `&ref=${encodeURIComponent(refSlug)}` : ""}`} className="btn-green w-full mt-4 !py-3 text-base">Quero este crédito</a>
         <p className="text-[11px] text-muted mt-3 leading-relaxed">Simulação pela Tabela Price com parcelas fixas. Sem tarifas escondidas. Sujeito a análise de crédito. Credor: World Serviços de Crédito LTDA.</p>
       </div>
     </div>

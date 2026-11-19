@@ -34,7 +34,7 @@ const plan = [
   { who: "admin", email: process.env.SMOKE_ADMIN_EMAIL || "admin@worldcred.demo", pass: "Demo@12345", paths: ["/admin", "/admin/leads", "/admin/propostas", "/admin/desembolsos", "/admin/cobranca", "/admin/conciliacao", "/admin/produtos", "/admin/agentes", "/admin/configuracoes", "/admin/cartao", "/admin/auditoria", "/admin/sandbox", "/admin?lista=vencido", "/admin?lista=recebido"] },
   { who: "agente", email: "agente1@worldcred.demo", pass: "Demo@12345", paths: ["/agente", "/agente/clientes/novo", `/agente/clientes/${ids.customer}`, "/agente/propostas", "/agente/propostas/nova", `/agente/propostas/${ids.proposalAccepted}`, "/agente/carteira", `/agente/contratos/${ids.contract}`, "/agente/casos"] },
   { who: "cliente", email: "cliente1@worldcred.demo", pass: "Demo@12345", paths: ["/cliente", `/cliente/contratos/${ids.contract}`, `/cliente/parcelas/${ids.installment}`, `/cliente/propostas/${ids.proposalAccepted}`, "/cliente/recibos", "/cliente/pix"] },
-  { who: "anon", paths: ["/", "/entrar", "/?ref=ana-2222", "/api/health"] },
+  { who: "anon", paths: ["/", "/entrar", "/?ref=ana-2222", "/cadastro", "/cadastro?ref=WC1001&valor=200000&prazo=10", "/api/health"] },
 ];
 
 let failures = 0;

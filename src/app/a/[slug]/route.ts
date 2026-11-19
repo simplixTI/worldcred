@@ -7,5 +7,5 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
   const safe = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40);
-  return NextResponse.redirect(`${env.appUrl}/?ref=${encodeURIComponent(safe)}#quero-credito`);
+  return NextResponse.redirect(`${env.appUrl}/cadastro?ref=${encodeURIComponent(safe)}`);
 }

@@ -7,11 +7,10 @@ export default async function AgentLayout({ children }: { children: React.ReactN
   const session = await requireRole(["agent"], { mfa: false });
   return (
     <AppShell session={session} portalLabel="Portal do agente" nav={[
-      { href: "/agente", label: "Início" },
-      { href: "/agente/clientes/novo", label: "Novo cliente" },
-      { href: "/agente/propostas", label: "Minhas propostas" },
-      { href: "/agente/carteira", label: "Minha carteira" },
-      { href: "/agente/casos", label: "Meus casos" },
+      { href: "/agente", label: "Minhas indicações" },
+      { href: "/agente/propostas", label: "Propostas" },
+      { href: "/agente/carteira", label: "Contratos" },
+      { href: "/agente/casos", label: "Casos" },
     ]}>{children}</AppShell>
   );
 }

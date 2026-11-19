@@ -171,6 +171,32 @@ describeIf("fluxo ponta a ponta (sandbox)", () => {
   });
 });
 
+describeIf("cadastro próprio do cliente com ID do agente", () => {
+  const db = createClient(url, service ?? anon, { auth: { persistSession: false } });
+  it("cria usuário, cliente vinculado ao agente pelo código e proposta sem SMS", async () => {
+    const suffix = Date.now().toString().slice(-6);
+    const cpf = genCpf("9" + suffix);
+    const { data: agent } = await db.rpc("wc_public_agent", { p_code: "wc1001" });
+    expect((agent as { first_name: string }).first_name).toBe("Ana");
+    const { data: u } = await db.auth.admin.createUser({ email: `self${suffix}@worldcred.demo`, password: "Demo@12345", email_confirm: true });
+    await db.from("profiles").insert({ id: u.user!.id, role: "client", full_name: `Self ${suffix}` });
+    const { rpc } = await import("@/lib/supabase/admin");
+    const { cpfHash } = await import("@/lib/services/customers");
+    const reg = await rpc<{ customer_id: string }>("wc_self_register_customer", { p_user_id: u.user!.id, p_full_name: `Self ${suffix}`, p_cpf: cpf, p_cpf_hash: cpfHash(cpf), p_phone: "+5511977770009", p_email: `self${suffix}@worldcred.demo`, p_agent: (agent as { id: string }).id });
+    const { data: link } = await db.from("agent_customers").select("agent_id").eq("customer_id", reg.customer_id).single();
+    expect(link!.agent_id).toBe(AGENT1);
+    const { createAndSendProposal, activeProductVersions } = await import("@/lib/services/proposals");
+    const pv = (await activeProductVersions()).find((v) => v.products.principal_cents === 100000)!;
+    const p = await createAndSendProposal((agent as { id: string }).id, reg.customer_id, pv.id, 3, { skipSms: true });
+    const { data: prop } = await db.from("proposals").select("status, agent_id").eq("id", p.proposalId).single();
+    expect(prop!.status).toBe("sent"); expect(prop!.agent_id).toBe(AGENT1);
+    // sem indicação também funciona
+    const p2 = await createAndSendProposal(null, reg.customer_id, pv.id, 6, { skipSms: true });
+    const { data: prop2 } = await db.from("proposals").select("agent_id").eq("id", p2.proposalId).single();
+    expect(prop2!.agent_id).toBeNull();
+  });
+});
+
 function genCpf(seed: string): string {
   const base = (seed + "123456789").slice(0, 9).split("").map(Number);
   const calc = (arr: number[]) => { const len = arr.length + 1; let s = 0; arr.forEach((d, i) => { s += d * (len - i); }); const r = (s * 10) % 11; return r === 10 ? 0 : r; };

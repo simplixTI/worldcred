@@ -16,10 +16,10 @@ export default async function AdminAgentes() {
   for (const r of ac ?? []) counts.set(r.agent_id, (counts.get(r.agent_id) ?? 0) + 1);
   return (
     <>
-      <PageTitle title="Agentes e permissões" subtitle="Desativar revoga o acesso e preserva a autoria dos contratos." />
+      <PageTitle title="Agentes e permissões" subtitle="Cada agente recebe um ID (ex.: WC1001) que o cliente informa no cadastro. Desativar revoga o acesso e preserva a autoria." />
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-        <div className="card overflow-x-auto"><table className="table"><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Clientes</th><th>Status</th><th></th></tr></thead>
-          <tbody>{(users ?? []).map((u) => <tr key={u.id}><td>{u.full_name}</td><td className="text-xs">{u.email}</td><td>{u.role === "admin" ? "Administrador" : "Agente"}</td><td>{counts.get(u.id) ?? 0}</td><td><StatusBadge status={u.active ? "active" : "cancelled"} overrideLabel={u.active ? "Ativo" : "Inativo"} /></td>
+        <div className="card overflow-x-auto"><table className="table"><thead><tr><th>Nome</th><th>ID</th><th>E-mail</th><th>Perfil</th><th>Indicados</th><th>Status</th><th></th></tr></thead>
+          <tbody>{(users ?? []).map((u) => <tr key={u.id}><td>{u.full_name}</td><td className="font-mono text-xs font-bold text-navy">{u.referral_code ?? "—"}</td><td className="text-xs">{u.email}</td><td>{u.role === "admin" ? "Administrador" : "Agente"}</td><td>{counts.get(u.id) ?? 0}</td><td><StatusBadge status={u.active ? "active" : "cancelled"} overrideLabel={u.active ? "Ativo" : "Inativo"} /></td>
             <td>{u.role === "agent" && <ActionButton label={u.active ? "Desativar" : "Reativar"} className={u.active ? "btn-danger !py-1.5 !px-3 text-xs" : "btn-green !py-1.5 !px-3 text-xs"} confirm={u.active ? "Desativar este agente? O acesso é revogado imediatamente." : undefined} action={setAgentActive} args={[u.id, !u.active]} />}</td></tr>)}</tbody></table></div>
         <div className="space-y-4">
           <div className="card p-4"><h2 className="font-semibold text-navy mb-2">Novo usuário</h2><NewAgentForm /></div>

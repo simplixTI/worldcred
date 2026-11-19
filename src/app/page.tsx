@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getSession, homeFor } from "@/lib/auth";
 import { buildSchedule } from "@/lib/finance/price";
 import { Simulator, type SimProduct, type SimRow } from "@/components/landing/simulator";
-import { LeadForm } from "@/components/landing/lead-form";
 import { Stagger, Item } from "@/components/motion";
 import { Zap, ShieldCheck, Smartphone, CreditCard, FileCheck2, BadgeCheck, QrCode, MessageSquareText } from "lucide-react";
 
@@ -54,7 +53,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             <h1 className="rise rise-d1 text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight">Crédito de R$ 1.000 a R$ 10.000, <span className="text-green-bright">com Pix na conta</span>.</h1>
             <p className="rise rise-d2 mt-5 text-white/75 text-lg md:text-xl leading-relaxed max-w-xl">Simule em segundos, aceite pelo celular e receba direto na sua chave Pix. Parcelas que não mudam e um portal para acompanhar tudo.</p>
             <div className="rise rise-d3 mt-7 flex flex-wrap gap-3">
-              <a href="#quero-credito" className="btn-green !px-6 !py-3 text-base">Quero crédito</a>
+              <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className="btn-green !px-6 !py-3 text-base">Quero crédito</Link>
               <a href="#como-funciona" className="btn bg-white/10 text-white ring-1 ring-white/20 hover:bg-white/20 !px-6 !py-3 text-base">Como funciona</a>
             </div>
             <ul className="rise rise-d4 mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">
@@ -63,7 +62,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
               <li className="flex items-center gap-2"><Smartphone size={16} className="text-green-bright" /> Tudo pelo celular</li>
             </ul>
           </div>
-          <div className="rise rise-d2 text-ink"><Simulator products={products} sims={sims} /></div>
+          <div className="rise rise-d2 text-ink"><Simulator products={products} sims={sims} refSlug={sp.ref ?? ""} /></div>
         </div>
       </section>
 
@@ -72,7 +71,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <p className="text-muted mt-3 max-w-2xl text-lg">Sem papelada e sem fila. Você acompanha cada etapa pelo portal.</p>
         <Stagger className="mt-10 grid md:grid-cols-4 gap-4">
           {[
-            { Icon: MessageSquareText, t: "Você pede", d: "Simula aqui, deixa seu contato e um agente WorldCred fala com você." },
+            { Icon: MessageSquareText, t: "Você se cadastra", d: "Escolhe o valor, informa seus dados e o ID do agente que indicou você. Três minutos." },
             { Icon: FileCheck2, t: "Lê e aceita", d: "A proposta chega no seu portal com valor, parcelas, juros e CET. Aceite com um toque." },
             { Icon: QrCode, t: "Recebe via Pix", d: "Aprovado, o dinheiro cai na sua chave Pix. Chave do seu CPF, validada pelo banco." },
             { Icon: Smartphone, t: "Paga quando quiser", d: "Cada parcela tem QR Code e copia e cola. A baixa é automática." },
@@ -108,17 +107,25 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         </div>
       </section>
 
-      <section id="quero-credito" className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid lg:grid-cols-[1fr_1.1fr] gap-10 items-start">
-        <div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-navy">Quero crédito</h2>
-          <p className="text-muted mt-3 text-lg leading-relaxed">Deixe seus dados. Um agente WorldCred entra em contato pelo celular, confirma seu pedido e envia a proposta para você ler e aceitar no portal.</p>
-          <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-            {[["R$ 1 mil", "a partir de"], ["R$ 10 mil", "até"], ["12x", "em até"]].map(([v, l]) => (
-              <div key={v} className="card p-4"><div className="text-xs text-muted">{l}</div><div className="text-xl font-extrabold text-navy tabular-nums">{v}</div></div>
-            ))}
+      <section id="quero-credito" className="mx-auto max-w-6xl px-4 py-16 md:py-24">
+        <h2 className="text-3xl md:text-4xl font-extrabold text-navy max-w-2xl">Escolha como quer o seu crédito.</h2>
+        <p className="text-muted mt-3 max-w-2xl text-lg">O cadastro leva três minutos. Se alguém indicou você, tenha o ID do agente em mãos.</p>
+        <div className="mt-8 grid md:grid-cols-2 gap-4">
+          <div className="card p-6 md:p-8 border-green/40 relative overflow-hidden">
+            <span className="badge bg-green-soft text-green">disponível agora</span>
+            <h3 className="text-2xl font-extrabold text-navy mt-3">Crédito padrão</h3>
+            <p className="text-muted mt-2 leading-relaxed">De R$ 1.000 a R$ 10.000, em 3 a 12 parcelas fixas a 15% ao mês. Dinheiro na sua chave Pix depois da aprovação.</p>
+            <ul className="mt-4 space-y-1.5 text-sm text-ink">{["Parcelas fixas, sem surpresa", "CET mostrado antes de aceitar", "Pague cada parcela por QR Code Pix"].map((t) => <li key={t} className="flex items-center gap-2"><BadgeCheck size={16} className="text-green" />{t}</li>)}</ul>
+            <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className="btn-green w-full mt-6 !py-3 text-base">Quero crédito padrão</Link>
+          </div>
+          <div className="card p-6 md:p-8 relative overflow-hidden">
+            <span className="badge bg-warn-soft text-warn">em breve</span>
+            <h3 className="text-2xl font-extrabold text-navy mt-3">Crédito com o cartão</h3>
+            <p className="text-muted mt-2 leading-relaxed">Use o limite do seu cartão de crédito, receba o valor via Pix e pague na fatura. Operação com parceiro oficial; seus dados de cartão nunca passam pela WorldCred.</p>
+            <ul className="mt-4 space-y-1.5 text-sm text-ink">{["Sem parcelas Pix: paga na fatura", "Checkout seguro do parceiro", "Valor líquido e taxas mostrados antes"].map((t) => <li key={t} className="flex items-center gap-2"><CreditCard size={16} className="text-navy/60" />{t}</li>)}</ul>
+            <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className="btn-outline w-full mt-6 !py-3 text-base">Cadastrar e ser avisado</Link>
           </div>
         </div>
-        <LeadForm refSlug={sp.ref ?? null} agentName={agent} />
       </section>
 
       <section id="perguntas" className="mx-auto max-w-3xl px-4 pb-20">

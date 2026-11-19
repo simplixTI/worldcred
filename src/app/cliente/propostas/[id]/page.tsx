@@ -7,7 +7,7 @@ import type { ScheduleSnapshot } from "@/lib/finance/price";
 import { formatBRL, formatRate } from "@/lib/finance/money";
 import { formatDateTimeBR } from "@/lib/finance/dates";
 
-export default async function ClienteProposta({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aceita?: string }> }) {
+export default async function ClienteProposta({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aceita?: string; nova?: string }> }) {
   const { id } = await params; const sp = await searchParams;
   const db = await createClient();
   const { data: p } = await db.from("proposals").select("*, lenders(legal_name, cnpj), customers(full_name)").eq("id", id).maybeSingle();
@@ -18,6 +18,7 @@ export default async function ClienteProposta({ params, searchParams }: { params
   return (
     <>
       <PageTitle title={`Proposta #${p.number}`} subtitle={`Credor: ${lender.legal_name} · CNPJ ${lender.cnpj}`} action={<StatusBadge status={p.status} />} />
+      {sp.nova && p.status === "sent" && <div className="mb-4"><Alert kind="success">Sua conta foi criada e esta é a sua proposta. Leia as condições e, se estiver de acordo, aceite abaixo. Depois cadastre sua chave Pix para receber o crédito.</Alert></div>}
       {sp.aceita && <div className="mb-4"><Alert kind="success">Aceite registrado em {formatDateTimeBR(p.accepted_at)}. Agora a proposta segue para aprovação e, depois, o crédito é enviado para sua chave Pix.</Alert></div>}
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="card p-4"><ScheduleTable snap={snap} /></div>

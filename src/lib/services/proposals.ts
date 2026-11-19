@@ -43,11 +43,13 @@ export function simulate(pv: ProductVersionRow, termMonths: number): ScheduleSna
   });
 }
 
-/** Agente cria a proposta e a envia para aceite do cliente (SMS com link). */
-export async function createAndSendProposal(agentId: string, customerId: string, productVersionId: string, termMonths: number) {
+/** Cria a proposta e a envia para aceite do cliente (SMS com link). agentId nulo = sem indicação. */
+export async function createAndSendProposal(agentId: string | null, customerId: string, productVersionId: string, termMonths: number, opts: { skipSms?: boolean } = {}) {
   const db = adminClient();
-  const { data: link } = await db.from("agent_customers").select("customer_id").eq("agent_id", agentId).eq("customer_id", customerId).maybeSingle();
-  if (!link) throw new Error("cliente fora da sua carteira");
+  if (agentId) {
+    const { data: link } = await db.from("agent_customers").select("customer_id").eq("agent_id", agentId).eq("customer_id", customerId).maybeSingle();
+    if (!link) throw new Error("cliente fora da sua carteira");
+  }
   const versions = await activeProductVersions();
   const pv = versions.find((v) => v.id === productVersionId);
   if (!pv) throw new Error("produto indisponível");
@@ -62,6 +64,7 @@ export async function createAndSendProposal(agentId: string, customerId: string,
   }).select("id, number").single();
   if (error) throw new Error(error.message);
   await rpc("wc_audit", { p_action: "proposal.send", p_entity: "proposals", p_entity_id: p.id, p_meta: { agent: agentId } }).catch(() => {});
+  if (opts.skipSms) return { proposalId: p.id as string, number: p.number as number, smsOk: false };
   const { data: c } = await db.from("customers").select("phone").eq("id", customerId).single();
   const { url } = await createPortalLink(customerId, null, 72);
   const sms = await smsProvider().send(c?.phone ?? "", `WorldCred: sua proposta de crédito está pronta para leitura e aceite: ${url}`);
