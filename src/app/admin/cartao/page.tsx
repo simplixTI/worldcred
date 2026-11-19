@@ -17,7 +17,7 @@ export default async function AdminCartao() {
       <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
         <div className="card p-4 text-sm space-y-3">
           <div className="flex items-center justify-between"><span>Modalidade</span><StatusBadge status={cfg.live ? "active" : "cancelled"} overrideLabel={cfg.live ? "Ativa" : cfg.enabled ? "Ativa, sem credencial MP" : "Desativada"} /></div>
-          <p className="text-muted">Provedor: Mercado Pago · token {process.env.MP_ACCESS_TOKEN ? (process.env.MP_ACCESS_TOKEN.startsWith("TEST-") ? "de teste" : "de produção") : "ausente"} · webhook {process.env.MP_WEBHOOK_SECRET ? "assinado" : "sem segredo"}</p>
+          <p className="text-muted">Provedor: Mercado Pago · token {process.env.MP_ACCESS_TOKEN ? (process.env.MP_ACCESS_TOKEN.startsWith("TEST-") ? "de teste" : "de produção") : "ausente"} · webhook {process.env.MP_WEBHOOK_SECRET ? "assinado" : "sem segredo"} · checkout {process.env.NEXT_PUBLIC_MP_PUBLIC_KEY ? "transparente (no portal)" : "redirecionado (sem chave pública)"}</p>
           <p className="text-muted">Taxa {Number(cfg.monthly_rate) * 100}% a.m. · até {cfg.max_installments}x · liberar antes do repasse: {cfg.allow_disburse_before_release ? "sim (teste)" : "não"}</p>
           <ActionButton label={cfg.enabled ? "Desativar modalidade" : "Ativar modalidade"} className={cfg.enabled ? "btn-danger" : "btn-green"} action={toggleCardModality} args={[]} />
           <Alert kind="info">Webhook: <code>{process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/mercadopago</code>. Configure no painel do Mercado Pago (evento “Pagamentos”) e copie a assinatura secreta para MP_WEBHOOK_SECRET.</Alert>

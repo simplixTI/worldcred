@@ -18,11 +18,11 @@ export default async function ClienteCartao() {
   const quotes = amounts.flatMap((a) => Array.from({ length: cfg.max_installments }, (_, i) => i + 1).map((n) => { const q = quoteCard(a, n, cfg.monthly_rate); return { net: a, n, installment: q.installment_cents, last: q.last_installment_cents, gross: q.gross_cents, fees: q.fees_cents, cet: q.cet_monthly }; }));
   return (
     <>
-      <PageTitle title="Crédito com o cartão" subtitle="Você paga no cartão em parcelas e recebe o valor líquido via Pix. O pagamento é feito no checkout seguro do Mercado Pago." />
+      <PageTitle title="Crédito com o cartão" subtitle="Você paga no cartão em parcelas e recebe o valor líquido via Pix, sem sair do portal. O cartão é processado pelo Mercado Pago." />
       {!cfg.live ? <Alert kind="warn">Esta modalidade ainda não está disponível. Avisaremos quando for liberada.</Alert> : me?.pix_key_status !== "validated" ? (
         <Alert kind="warn">Cadastre e valide sua chave Pix antes de contratar. <Link href="/cliente/pix" className="underline font-semibold">Cadastrar chave Pix</Link></Alert>
       ) : (
-        <CardQuote amounts={amounts} maxInstallments={cfg.max_installments} rate={cfg.monthly_rate} quotes={quotes} />
+        <CardQuote amounts={amounts} maxInstallments={cfg.max_installments} rate={cfg.monthly_rate} quotes={quotes} publicKey={process.env.NEXT_PUBLIC_MP_PUBLIC_KEY ?? null} />
       )}
       <h2 className="font-bold text-navy text-lg mt-8 mb-2">Minhas operações</h2>
       {!ops?.length ? <Empty>Nenhuma operação com cartão ainda.</Empty> : (
