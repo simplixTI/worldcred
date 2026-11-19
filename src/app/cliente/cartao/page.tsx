@@ -14,7 +14,7 @@ export default async function ClienteCartao() {
     db.from("customers").select("pix_key_status").maybeSingle(),
     db.from("card_operations").select("*").order("created_at", { ascending: false }).limit(10),
   ]);
-  const amounts = [100000, 200000, 300000, 500000, 1000000].filter((a) => a >= cfg.min_cents && a <= cfg.max_cents);
+  const amounts = Array.from(new Set([cfg.min_cents, 100000, 200000, 300000, 500000, 1000000])).filter((a) => a >= cfg.min_cents && a <= cfg.max_cents).sort((a, b) => a - b);
   const quotes = amounts.flatMap((a) => Array.from({ length: cfg.max_installments }, (_, i) => i + 1).map((n) => { const q = quoteCard(a, n, cfg.monthly_rate); return { net: a, n, installment: q.installment_cents, last: q.last_installment_cents, gross: q.gross_cents, fees: q.fees_cents, cet: q.cet_monthly }; }));
   return (
     <>
