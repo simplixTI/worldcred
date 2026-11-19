@@ -10,6 +10,12 @@ import { redact } from "@/lib/utils/mask";
 export interface CardSettings { enabled: boolean; provider: string | null; integration_approved: boolean; monthly_rate: string; max_installments: number; min_cents: number; max_cents: number; allow_disburse_before_release: boolean; }
 export const DEFAULT_CARD: CardSettings = { enabled: false, provider: "mercadopago", integration_approved: false, monthly_rate: "0.15", max_installments: 12, min_cents: 100000, max_cents: 1000000, allow_disburse_before_release: true };
 
+/** E-mail aceito pelo Mercado Pago: formato válido e TLD real (recusa .demo/.local/.test). Fallback técnico no domínio da WorldCred. */
+export function payerEmailFor(candidates: (string | null | undefined)[], customerId: string): string {
+  const ok = (e?: string | null) => !!e && /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e) && !/\.(demo|local|test|invalid|example)$/i.test(e);
+  return candidates.find(ok) ?? `cliente-${customerId.slice(0, 8)}@worldcred.digital`;
+}
+
 export async function getCardSettings(): Promise<CardSettings & { live: boolean }> {
   const s = { ...DEFAULT_CARD, ...(await getSetting<Partial<CardSettings>>("card", {})) };
   return { ...s, live: s.enabled && !!process.env.MP_ACCESS_TOKEN };
@@ -41,7 +47,7 @@ export async function createCardOperation(userId: string, netCents: number, inst
   }).select("id, checkout_reference").single();
   if (error) throw new Error(error.message);
   await rpc("wc_audit", { p_action: "card.operation_created", p_entity: "card_operations", p_entity_id: op.id, p_meta: { net_cents: netCents, installments } }).catch(() => {});
-  return { operationId: op.id as string, grossCents: q.gross_cents, installments, customer: { email: c.email ?? `${c.id}@worldcred.digital`, cpf: c.cpf, name: c.full_name } };
+  return { operationId: op.id as string, grossCents: q.gross_cents, installments, customer: { email: payerEmailFor([c.email], c.id), cpf: c.cpf, name: c.full_name } };
 }
 
 /** Fluxo de reserva: checkout hospedado (redireciona para o Mercado Pago). */
@@ -69,7 +75,7 @@ export async function payCardWithToken(userId: string, operationId: string, form
   try {
     p = await createTokenPayment({
       externalReference: op.id, amountCents: Number(op.gross_cents), token: form.token, installments: form.installments, paymentMethodId: form.payment_method_id, issuerId: form.issuer_id,
-      payerEmail: form.payer?.email || c.email || `${c.id}@worldcred.digital`, payerIdType: "CPF", payerIdNumber: form.payer?.identification?.number || c.cpf,
+      payerEmail: payerEmailFor([form.payer?.email, c.email], c.id), payerIdType: "CPF", payerIdNumber: (form.payer?.identification?.number || c.cpf).replace(/\D/g, ""),
       description: `WorldCred crédito com cartão ${op.checkout_reference}`, notificationUrl: `${env.appUrl}/api/webhooks/mercadopago`,
     });
   } catch (e) {
