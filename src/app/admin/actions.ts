@@ -107,8 +107,16 @@ export const toggleCardModality = wrap(async () => {
   await admin();
   const { data } = await adminClient().from("settings").select("value").eq("key", "card").maybeSingle();
   const card = (data?.value as { enabled?: boolean; integration_approved?: boolean; provider?: string | null }) ?? { enabled: false, integration_approved: false, provider: null };
-  if (!card.enabled && !card.integration_approved && process.env.NODE_ENV === "production") throw new Error("bloqueado: ative somente com integração oficial aprovada (marque integration_approved nas configurações)");
+  if (!card.enabled && !process.env.MP_ACCESS_TOKEN) throw new Error("configure MP_ACCESS_TOKEN (Mercado Pago) antes de ativar");
   const r = await saveSettings("card", { ...card, enabled: !card.enabled });
   if (r?.error) throw new Error(r.error);
   return card.enabled ? "Modalidade cartão desativada." : "Modalidade cartão ativada.";
 }, ["/admin/cartao"]);
+
+export const disburseCard = wrap(async (operationId: string) => {
+  const s = await admin();
+  const { disburseCardOperation } = await import("@/lib/services/card");
+  const r = await disburseCardOperation(operationId, s.userId);
+  return r.status === "confirmed" ? "Pix enviado e confirmado." : r.status === "sent" ? "Pix enviado; aguardando confirmação." : r.status === "already" ? "Já estava desembolsada." : r.status === "timeout" ? "Tempo limite; consulte antes de reenviar." : `Falha: ${r.error}`;
+}, ["/admin/cartao"]);
+export const syncCard = wrap(async (paymentId: string) => { await admin(); const { syncCardPayment } = await import("@/lib/services/card"); const r = await syncCardPayment(paymentId); return `Mercado Pago: ${JSON.stringify(r)}`; }, ["/admin/cartao"]);

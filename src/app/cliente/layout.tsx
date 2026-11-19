@@ -8,6 +8,7 @@ export default async function ClientLayout({ children }: { children: React.React
   return (
     <AppShell session={session} portalLabel="Portal do cliente" nav={[
       { href: "/cliente", label: "Início" },
+      { href: "/cliente/cartao", label: "Cartão" },
       { href: "/cliente/recibos", label: "Recibos" },
       { href: "/cliente/pix", label: "Minha chave Pix" },
     ]}>{children}</AppShell>

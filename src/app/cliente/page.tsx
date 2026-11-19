@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle, StatusBadge, Money, Alert, Empty } from "@/components/ui";
 import { daysOverdue, formatDateBR } from "@/lib/finance/dates";
+import { getCardSettings } from "@/lib/services/card";
 
 export default async function ClienteHome() {
   const s = await requireRole(["client"], { mfa: false });
@@ -12,6 +13,7 @@ export default async function ClienteHome() {
     db.from("proposals").select("id, number, status, principal_cents, term_months, expires_at").in("status", ["sent", "accepted", "approved", "contracted"]).order("created_at", { ascending: false }),
     db.from("contracts").select("id, number, status, principal_cents, installments(id, number, due_date, amount_cents, paid_cents, status, in_review)").order("created_at", { ascending: false }),
   ]);
+  const cardLive = await getCardSettings().then((c) => c.live).catch(() => false);
   const pending = (proposals ?? []).filter((p) => p.status === "sent");
   const upcoming = (contracts ?? []).flatMap((c) => (c.installments as { id: string; number: number; due_date: string; amount_cents: number; paid_cents: number; status: string; in_review: boolean }[]).filter((i) => i.status !== "paid").map((i) => ({ ...i, contract: c.number }))).sort((a, b) => a.due_date.localeCompare(b.due_date)).slice(0, 6);
   return (
@@ -24,6 +26,7 @@ export default async function ClienteHome() {
           <Link href={`/cliente/propostas/${p.id}`} className="btn-green">Ler e aceitar</Link>
         </div>
       ))}
+      {cardLive && <div className="card p-4 mb-4 flex flex-wrap items-center justify-between gap-3"><div><div className="font-bold text-navy">Crédito com o cartão</div><div className="text-sm text-muted">Pague no cartão em até 12x e receba o valor via Pix.</div></div><Link href="/cliente/cartao" className="btn-outline">Simular</Link></div>}
       <h2 className="font-semibold text-navy mb-2">Próximas parcelas</h2>
       {!upcoming.length ? <Empty>Nenhuma parcela em aberto.</Empty> : (
         <div className="grid gap-3 sm:grid-cols-2 mb-6">

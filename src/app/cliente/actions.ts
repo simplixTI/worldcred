@@ -55,3 +55,14 @@ export async function regenerateChargeAction(installmentId: string): Promise<Act
   revalidatePath(`/cliente/parcelas/${installmentId}`);
   return { ok: "Novo QR Code gerado." };
 }
+
+export async function startCardAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const s = await assertRole(["client"], { mfa: false });
+  let url: string;
+  try {
+    const { startCardOperation } = await import("@/lib/services/card");
+    const r = await startCardOperation(s.userId, Number(formData.get("net_cents")), Number(formData.get("installments")));
+    url = r.checkoutUrl;
+  } catch (e) { return { error: (e as Error).message }; }
+  redirect(url);
+}

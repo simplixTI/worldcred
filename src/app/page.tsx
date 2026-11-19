@@ -6,6 +6,7 @@ import { getSession, homeFor } from "@/lib/auth";
 import { buildSchedule } from "@/lib/finance/price";
 import { Simulator, type SimProduct, type SimRow } from "@/components/landing/simulator";
 import { Stagger, Item } from "@/components/motion";
+import { getCardSettings } from "@/lib/services/card";
 import { Zap, ShieldCheck, Smartphone, CreditCard, FileCheck2, BadgeCheck, QrCode, MessageSquareText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
     supabase.rpc("wc_public_catalog"),
     sp.ref ? (async () => { const r = await supabase.rpc("wc_public_agent_name", { p_slug: sp.ref }); return (r.data as string | null) ?? null; })().catch(() => null) : Promise.resolve(null),
   ]);
+  const cardLive = await getCardSettings().then((c) => c.live).catch(() => false);
   const rows = (catalog && catalog.length ? catalog : FALLBACK) as { principal_cents: number; monthly_rate: string; allowed_terms: number[]; fee_cents: number }[];
   const products: SimProduct[] = rows.map((r) => ({ principal: Number(r.principal_cents), terms: r.allowed_terms, rate: String(r.monthly_rate) })).sort((a, b) => a.principal - b.principal);
   const sims: SimRow[] = rows.flatMap((r) => r.allowed_terms.map((t) => {
@@ -100,7 +102,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             </ul>
           </div>
           <div className="card text-ink p-6 md:p-8">
-            <div className="flex items-center gap-3 mb-4"><span className="grid place-items-center w-11 h-11 rounded-xl bg-navy/10 text-navy"><CreditCard size={20} /></span><div><h3 className="font-bold text-navy text-lg">Crédito com o cartão</h3><span className="badge bg-warn-soft text-warn">em breve</span></div></div>
+            <div className="flex items-center gap-3 mb-4"><span className="grid place-items-center w-11 h-11 rounded-xl bg-navy/10 text-navy"><CreditCard size={20} /></span><div><h3 className="font-bold text-navy text-lg">Crédito com o cartão</h3><span className={`badge ${cardLive ? "bg-green-soft text-green" : "bg-warn-soft text-warn"}`}>{cardLive ? "disponível" : "em breve"}</span></div></div>
             <p className="text-muted leading-relaxed">Use o limite do seu cartão de crédito e receba o valor via Pix, pagando na fatura. Operação feita com parceiro oficial: seus dados de cartão nunca passam pela WorldCred.</p>
             <a href="#quero-credito" className="btn-outline mt-5">Avise-me quando lançar</a>
           </div>
@@ -119,11 +121,11 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
             <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className="btn-green w-full mt-6 !py-3 text-base">Quero crédito padrão</Link>
           </div>
           <div className="card p-6 md:p-8 relative overflow-hidden">
-            <span className="badge bg-warn-soft text-warn">em breve</span>
+            <span className={`badge ${cardLive ? "bg-green-soft text-green" : "bg-warn-soft text-warn"}`}>{cardLive ? "disponível agora" : "em breve"}</span>
             <h3 className="text-2xl font-extrabold text-navy mt-3">Crédito com o cartão</h3>
             <p className="text-muted mt-2 leading-relaxed">Use o limite do seu cartão de crédito, receba o valor via Pix e pague na fatura. Operação com parceiro oficial; seus dados de cartão nunca passam pela WorldCred.</p>
             <ul className="mt-4 space-y-1.5 text-sm text-ink">{["Sem parcelas Pix: paga na fatura", "Checkout seguro do parceiro", "Valor líquido e taxas mostrados antes"].map((t) => <li key={t} className="flex items-center gap-2"><CreditCard size={16} className="text-navy/60" />{t}</li>)}</ul>
-            <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className="btn-outline w-full mt-6 !py-3 text-base">Cadastrar e ser avisado</Link>
+            <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className={`${cardLive ? "btn-green" : "btn-outline"} w-full mt-6 !py-3 text-base`}>{cardLive ? "Quero crédito com o cartão" : "Cadastrar e ser avisado"}</Link>
           </div>
         </div>
       </section>
