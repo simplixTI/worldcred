@@ -45,8 +45,9 @@ export interface MpPayment {
   date_approved: string | null; money_release_date: string | null; payment_type_id: string; card?: { last_four_digits?: string; first_six_digits?: string };
 }
 
-export async function getPayment(id: string): Promise<MpPayment> {
-  const res = await fetch(`${API}/v1/payments/${id}`, { headers: { Authorization: `Bearer ${token()}` }, cache: "no-store" });
+export async function getPayment(id: string): Promise<MpPayment | null> {
+  const res = await fetch(`${API}/v1/payments/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token()}` }, cache: "no-store" });
+  if (res.status === 404 || res.status === 400) return null; // id desconhecido (ex.: simulação do painel)
   if (!res.ok) throw new Error(`Mercado Pago ${res.status} ao consultar pagamento`);
   const j = await res.json();
   return { ...j, id: String(j.id) };

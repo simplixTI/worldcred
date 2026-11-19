@@ -86,6 +86,7 @@ export async function payCardWithToken(userId: string, operationId: string, form
 /** Consulta o pagamento no Mercado Pago e registra o resultado (idempotente). Usado pelo webhook e pela página de retorno. */
 export async function syncCardPayment(paymentId: string) {
   const p = await getPayment(paymentId);
+  if (!p) return { outcome: "payment_not_found", payment_id: paymentId };
   if (!p.external_reference) return { outcome: "ignored", reason: "sem external_reference" };
   const r = await rpc<Record<string, unknown>>("wc_card_payment_result", {
     p_operation: p.external_reference, p_payment_id: p.id, p_status: p.status, p_amount_cents: Math.round(p.transaction_amount * 100), p_installments: p.installments,
