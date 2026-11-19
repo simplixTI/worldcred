@@ -68,3 +68,8 @@ export async function assertRole(roles: Role[], opts: { mfa?: boolean } = {}): P
 export function homeFor(role: Role): string {
   return role === "admin" ? "/admin" : role === "agent" ? "/agente" : "/cliente";
 }
+
+/** Painel DEV: admin cujo e-mail está em DEV_EMAILS. */
+export function isDev(s: SessionInfo | null): boolean {
+  return !!s && s.role === "admin" && !!s.email && env.devEmails.includes(s.email.toLowerCase());
+}

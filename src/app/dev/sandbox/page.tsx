@@ -3,7 +3,7 @@ import { env } from "@/lib/env";
 import { adminClient } from "@/lib/supabase/admin";
 import { PageTitle, Alert, Money, StatusBadge, Empty } from "@/components/ui";
 import { ActionButton } from "@/components/action-button";
-import { simPay, simExpire, simRefund, simBadSignature, simPayoutWebhook, simResend, runCollections, runReconcile } from "../actions";
+import { simPay, simExpire, simRefund, simBadSignature, simPayoutWebhook, simResend, runCollections, runReconcile } from "@/app/admin/actions";
 import { formatDateTimeBR } from "@/lib/finance/dates";
 
 export default async function Sandbox() {

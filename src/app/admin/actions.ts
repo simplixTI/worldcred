@@ -39,8 +39,8 @@ export const reviewClaim = wrap(async (id: string, confirmed: boolean, note?: st
 export const resolveReconciliation = wrap(async (id: string, action: string, note?: string) => { const s = await admin(); await rpc("wc_resolve_reconciliation", { p_item_id: id, p_action: action, p_actor: s.userId, p_note: note ?? null }); return "Item conciliado (auditado)."; }, ["/admin/conciliacao", "/admin"]);
 export const linkPayment = wrap(async (id: string, installmentId: string, note?: string) => { const s = await admin(); await rpc("wc_link_payment", { p_item_id: id, p_installment_id: installmentId, p_actor: s.userId, p_note: note ?? null }); return "Pagamento vinculado e aplicado."; }, ["/admin/conciliacao"]);
 
-export const runCollections = wrap(async () => { await admin(); const r = await runCollectionCycle(); return `Régua executada: ${JSON.stringify(r)}`; }, ["/admin/cobranca", "/admin/sandbox"]);
-export const runReconcile = wrap(async () => { await admin(); const d = await reconcilePendingDisbursements(); const c = await expireCharges(); return `Conciliação: ${JSON.stringify({ d, c })}`; }, ["/admin/desembolsos", "/admin/sandbox"]);
+export const runCollections = wrap(async () => { await admin(); const r = await runCollectionCycle(); return `Régua executada: ${JSON.stringify(r)}`; }, ["/admin/cobranca", "/dev/sandbox"]);
+export const runReconcile = wrap(async () => { await admin(); const d = await reconcilePendingDisbursements(); const c = await expireCharges(); return `Conciliação: ${JSON.stringify({ d, c })}`; }, ["/admin/desembolsos", "/dev/sandbox"]);
 
 export const saveSettings = wrap(async (key: string, value: Record<string, unknown>) => {
   const s = await admin();
@@ -86,12 +86,12 @@ async function postWebhook(raw: string, signature: string) {
   const out = await processPixWebhook(raw, { "x-wc-signature": signature });
   return `HTTP ${out.status} · ${JSON.stringify(out.body)}`;
 }
-export const simPay = wrap(async (reference: string, amountCents?: number, receiver?: string) => { await admin(); if (!env.isSandbox) throw new Error("apenas sandbox"); const e = await mockPix().simulatePayment(reference, amountCents, { receiverAccount: receiver }); return postWebhook(e.raw, e.signature); }, ["/admin/sandbox", "/admin", "/admin/conciliacao"]);
-export const simResend = wrap(async (eventRaw: string) => { await admin(); const e = mockPix().signEvent(JSON.parse(eventRaw)); return postWebhook(e.raw, e.signature); }, ["/admin/sandbox"]);
-export const simExpire = wrap(async (reference: string) => { await admin(); const e = await mockPix().simulateExpire(reference); return postWebhook(e.raw, e.signature); }, ["/admin/sandbox"]);
-export const simRefund = wrap(async (e2e: string, amountCents: number) => { await admin(); const e = await mockPix().simulateRefund(e2e, amountCents); return postWebhook(e.raw, e.signature); }, ["/admin/sandbox", "/admin/conciliacao"]);
-export const simBadSignature = wrap(async (reference: string) => { await admin(); const e = mockPix().signEvent({ eventId: `evt_bad_${Date.now()}`, kind: "charge.paid", reference, amountCents: 1 }); return postWebhook(e.raw, "assinatura-invalida"); }, ["/admin/sandbox"]);
-export const simPayoutWebhook = wrap(async (reference: string) => { await admin(); const e = await mockPix().simulatePayoutWebhook(reference); return postWebhook(e.raw, e.signature); }, ["/admin/sandbox", "/admin/desembolsos"]);
+export const simPay = wrap(async (reference: string, amountCents?: number, receiver?: string) => { await admin(); if (!env.isSandbox) throw new Error("apenas sandbox"); const e = await mockPix().simulatePayment(reference, amountCents, { receiverAccount: receiver }); return postWebhook(e.raw, e.signature); }, ["/dev/sandbox", "/admin", "/admin/conciliacao"]);
+export const simResend = wrap(async (eventRaw: string) => { await admin(); const e = mockPix().signEvent(JSON.parse(eventRaw)); return postWebhook(e.raw, e.signature); }, ["/dev/sandbox"]);
+export const simExpire = wrap(async (reference: string) => { await admin(); const e = await mockPix().simulateExpire(reference); return postWebhook(e.raw, e.signature); }, ["/dev/sandbox"]);
+export const simRefund = wrap(async (e2e: string, amountCents: number) => { await admin(); const e = await mockPix().simulateRefund(e2e, amountCents); return postWebhook(e.raw, e.signature); }, ["/dev/sandbox", "/admin/conciliacao"]);
+export const simBadSignature = wrap(async (reference: string) => { await admin(); const e = mockPix().signEvent({ eventId: `evt_bad_${Date.now()}`, kind: "charge.paid", reference, amountCents: 1 }); return postWebhook(e.raw, "assinatura-invalida"); }, ["/dev/sandbox"]);
+export const simPayoutWebhook = wrap(async (reference: string) => { await admin(); const e = await mockPix().simulatePayoutWebhook(reference); return postWebhook(e.raw, e.signature); }, ["/dev/sandbox", "/admin/desembolsos"]);
 
 // ---------- Leads ----------
 export const assignLead = wrap(async (leadId: string, agentId: string) => {

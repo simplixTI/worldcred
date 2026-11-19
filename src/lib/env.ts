@@ -21,5 +21,6 @@ export const env = {
   },
   get isSandbox() { return ["mock", "mercadopago"].includes(process.env.PIX_PROVIDER || "mock"); },
   get chargesAreReal() { return (process.env.PIX_PROVIDER || "mock") !== "mock"; },
+  get devEmails(): string[] { return (process.env.DEV_EMAILS || "brucnascimento@gmail.com").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean); },
   get linkSecret() { return process.env.PORTAL_LINK_SECRET || req("CRON_SECRET"); },
 };

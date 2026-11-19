@@ -1,6 +1,5 @@
-import { requireRole } from "@/lib/auth";
+import { requireRole, isDev } from "@/lib/auth";
 import { AppShell } from "@/components/shell";
-import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/agentes", label: "Agentes" },
     { href: "/admin/configuracoes", label: "Configurações" },
     { href: "/admin/cartao", label: "Cartão" },
-    { href: "/admin/auditoria", label: "Auditoria" },
   ];
-  if (env.isSandbox) nav.push({ href: "/admin/sandbox", label: "Sandbox" });
+  if (isDev(session)) nav.push({ href: "/dev", label: "Dev" });
   return <AppShell session={session} portalLabel="Administração" nav={nav}>{children}</AppShell>;
 }
