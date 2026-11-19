@@ -66,3 +66,22 @@ export async function startCardAction(_prev: ActionState, formData: FormData): P
   } catch (e) { return { error: (e as Error).message }; }
   redirect(url);
 }
+
+export async function createCardOperationAction(netCents: number, installments: number): Promise<{ error?: string; operationId?: string; grossCents?: number; email?: string; cpf?: string }> {
+  const s = await assertRole(["client"], { mfa: false });
+  try {
+    const { createCardOperation } = await import("@/lib/services/card");
+    const r = await createCardOperation(s.userId, netCents, installments);
+    return { operationId: r.operationId, grossCents: r.grossCents, email: r.customer.email, cpf: r.customer.cpf };
+  } catch (e) { return { error: (e as Error).message }; }
+}
+
+export async function payCardAction(operationId: string, form: { token: string; installments: number; payment_method_id: string; issuer_id?: string | null; payer?: { email?: string; identification?: { type?: string; number?: string } } }): Promise<{ error?: string; status?: string; detail?: string }> {
+  const s = await assertRole(["client"], { mfa: false });
+  try {
+    const { payCardWithToken } = await import("@/lib/services/card");
+    const r = await payCardWithToken(s.userId, operationId, form);
+    revalidatePath("/cliente/cartao");
+    return { status: r.status, detail: r.status_detail };
+  } catch (e) { return { error: (e as Error).message }; }
+}

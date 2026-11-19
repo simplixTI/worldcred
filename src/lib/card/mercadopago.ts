@@ -65,3 +65,26 @@ export function verifyWebhookSignature(headers: Record<string, string | null>, d
   const a = Buffer.from(expected), b = Buffer.from(v1);
   return a.length === b.length && timingSafeEqual(a, b);
 }
+
+export interface TokenPaymentInput {
+  externalReference: string; amountCents: number; token: string; installments: number; paymentMethodId: string; issuerId?: string | null;
+  payerEmail: string; payerIdType?: string; payerIdNumber?: string; description: string; notificationUrl: string;
+}
+
+/** Checkout Transparente: cria o pagamento com o token gerado pelo Brick no navegador (cartão nunca passa pelo servidor). */
+export async function createTokenPayment(input: TokenPaymentInput): Promise<MpPayment> {
+  const res = await fetch(`${API}/v1/payments`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json", "X-Idempotency-Key": input.externalReference },
+    body: JSON.stringify({
+      transaction_amount: Number((input.amountCents / 100).toFixed(2)), token: input.token, installments: input.installments,
+      payment_method_id: input.paymentMethodId, issuer_id: input.issuerId ? Number(input.issuerId) : undefined,
+      payer: { email: input.payerEmail, identification: input.payerIdNumber ? { type: input.payerIdType ?? "CPF", number: input.payerIdNumber } : undefined },
+      description: input.description, external_reference: input.externalReference, statement_descriptor: "WORLDCRED",
+      notification_url: input.notificationUrl, binary_mode: true,
+    }),
+  });
+  const j = await res.json();
+  if (!res.ok) throw new Error(j.message ? `Pagamento recusado: ${j.message}` : `Mercado Pago ${res.status}`);
+  return { ...j, id: String(j.id) };
+}
