@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { activeProductVersions, simulate } from "@/lib/services/proposals";
+import { getLoanSettings } from "@/lib/services/loan";
 import { SignupWizard } from "./wizard";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +10,7 @@ export const metadata: Metadata = { title: "Cadastro · WorldCred" };
 
 export default async function CadastroPage({ searchParams }: { searchParams: Promise<{ ref?: string; valor?: string; prazo?: string }> }) {
   const sp = await searchParams;
-  const versions = await activeProductVersions();
-  const products = versions.map((v) => ({ id: v.id, principal: v.products.principal_cents, terms: v.allowed_terms, rate: v.monthly_rate }));
-  const sims = versions.flatMap((v) => v.allowed_terms.map((t) => { const s = simulate(v, t); return { pvId: v.id, term: t, installment: s.regular_installment_cents, total: s.total_cents, net: s.net_cents, cet: s.cet_monthly, last: s.last_installment_cents }; }));
+  const limits = await getLoanSettings();
   let agentFirstName: string | null = null;
   if (sp.ref) {
     const supabase = await createClient();
@@ -28,7 +26,7 @@ export default async function CadastroPage({ searchParams }: { searchParams: Pro
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-8 md:py-12">
-        <SignupWizard products={products} sims={sims} initialRef={sp.ref ?? ""} agentFirstName={agentFirstName} initialPrincipal={Number(sp.valor) || 0} initialTerm={Number(sp.prazo) || 0} />
+        <SignupWizard limits={limits} rate={limits.monthly_rate} initialRef={sp.ref ?? ""} agentFirstName={agentFirstName} initialPrincipal={Number(sp.valor) || 0} initialTerm={Number(sp.prazo) || 0} />
       </main>
       <footer className="text-center text-xs text-muted py-6">World Serviços de Crédito LTDA · CNPJ 35.850.108/0001-58</footer>
     </div>

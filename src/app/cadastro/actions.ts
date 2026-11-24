@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { adminClient, rpc } from "@/lib/supabase/admin";
 import { isValidCPF, normalizePhoneBR, onlyDigits } from "@/lib/utils/mask";
 import { cpfHash } from "@/lib/services/customers";
-import { createAndSendProposal, activeProductVersions } from "@/lib/services/proposals";
+import { getLoanSettings, validateLoanChoice } from "@/lib/services/loan";
 import { lookupCpf, type CpfLookupResult } from "@/lib/services/cpf-lookup";
 
 export type SignupState = { error?: string } | undefined;
@@ -37,15 +37,14 @@ export async function checkAgentCodeAction(code: string): Promise<{ ok: boolean;
 export async function selfSignupAction(_prev: SignupState, formData: FormData): Promise<SignupState> {
   const f = (k: string) => String(formData.get(k) || "").trim();
   const name = f("full_name"), cpf = onlyDigits(f("cpf")), email = f("email").toLowerCase(), password = f("password");
-  const phone = normalizePhoneBR(f("phone")); const code = f("agent_code"); const pvId = f("product_version_id"); const term = Number(f("term_months"));
+  const phone = normalizePhoneBR(f("phone")); const code = f("agent_code"); const principal = Number(f("principal_cents")); const term = Number(f("term_months"));
   if (name.length < 5) return { error: "Informe seu nome completo." };
   if (!isValidCPF(cpf)) return { error: "CPF inválido." };
   if (!phone) return { error: "Informe um celular válido com DDD." };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Informe um e-mail válido." };
   if (password.length < 8) return { error: "A senha precisa ter ao menos 8 caracteres." };
   if (formData.get("consent") !== "on") return { error: "Precisamos do seu consentimento para analisar o crédito." };
-  const pv = (await activeProductVersions()).find((v) => v.id === pvId);
-  if (!pv || !pv.allowed_terms.includes(term)) return { error: "Escolha o valor e o prazo do crédito." };
+  try { validateLoanChoice(await getLoanSettings(), principal, term); } catch { return { error: "Escolha o valor e o prazo do crédito." }; }
 
   const db = adminClient();
   let agentId: string | null = null;
@@ -66,11 +65,12 @@ export async function selfSignupAction(_prev: SignupState, formData: FormData): 
     const { error: pErr } = await db.from("profiles").insert({ id: uid, role: "client", full_name: name, email, phone });
     if (pErr) throw new Error(pErr.message);
     const reg = await rpc<{ customer_id: string }>("wc_self_register_customer", { p_user_id: uid, p_full_name: name, p_cpf: cpf, p_cpf_hash: cpfHash(cpf), p_phone: phone, p_email: email, p_agent: agentId });
-    const prop = await createAndSendProposal(agentId, reg.customer_id, pv.id, term, { skipSms: true });
+    void reg;
+    const next = `/cliente/escolher?valor=${principal}&prazo=${term}`;
     const supabase = await createClient();
     const { error: sErr } = await supabase.auth.signInWithPassword({ email, password });
-    if (sErr) redirect(`/entrar?ok=1&next=${encodeURIComponent(`/cliente/propostas/${prop.proposalId}`)}`);
-    redirect(`/cliente/propostas/${prop.proposalId}?nova=1`);
+    if (sErr) redirect(`/entrar?ok=1&next=${encodeURIComponent(next)}`);
+    redirect(next);
   } catch (e) {
     if ((e as Error & { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) throw e;
     // desfaz o usuário para permitir nova tentativa

@@ -100,3 +100,14 @@ a.kpi:hover { transform: translateY(-2px); border-color: rgba(15, 122, 90, 0.5);
   .skeleton { animation: none; }
   .btn, .kpi, .input, .table tbody tr { transition: none; }
 }
+
+/* ---------- Slider de crédito ---------- */
+.wc-range { -webkit-appearance: none; appearance: none; height: 8px; border-radius: 999px; outline: none; cursor: pointer;
+  background: linear-gradient(90deg, var(--wc-green-bright) 0 var(--pct, 0%), rgba(16, 30, 90, 0.14) var(--pct, 0%) 100%); }
+.text-white .wc-range { background: linear-gradient(90deg, var(--wc-green-bright) 0 var(--pct, 0%), rgba(255, 255, 255, 0.18) var(--pct, 0%) 100%); }
+.wc-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 3px solid var(--wc-green-bright);
+  box-shadow: 0 4px 14px -4px rgba(15, 122, 90, 0.7); transition: transform 140ms var(--ease-out), box-shadow 140ms; }
+.wc-range::-webkit-slider-thumb:hover, .wc-range:active::-webkit-slider-thumb { transform: scale(1.12); box-shadow: 0 0 0 8px rgba(21, 163, 118, 0.18), 0 4px 14px -4px rgba(15, 122, 90, 0.7); }
+.wc-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 3px solid var(--wc-green-bright); box-shadow: 0 4px 14px -4px rgba(15, 122, 90, 0.7); }
+.wc-range::-moz-range-track { height: 8px; border-radius: 999px; background: transparent; }
+.wc-range:focus-visible { outline: 2px solid var(--wc-green-bright); outline-offset: 6px; }

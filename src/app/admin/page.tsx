@@ -120,12 +120,12 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
 async function listFor(kind: string, from: string, to: string, sp: Filters, today: string) {
   const db = adminClient();
   if (kind === "desembolsado") {
-    const { data } = await db.from("disbursements").select("amount_cents, confirmed_at, reference, contracts!inner(number, agent_id, product_version_id, customers(full_name), product_versions!inner(product_id))").eq("status", "confirmed").gte("confirmed_at", `${from}T00:00:00-03:00`).lte("confirmed_at", `${to}T23:59:59-03:00`);
+    const { data } = await db.from("disbursements").select("amount_cents, confirmed_at, reference, contracts!inner(number, agent_id, product_version_id, customers(full_name), product_versions(product_id))").eq("status", "confirmed").gte("confirmed_at", `${from}T00:00:00-03:00`).lte("confirmed_at", `${to}T23:59:59-03:00`);
     const rows = (data ?? []).filter((d) => filt(d.contracts as never, sp)).map((d) => { const c = d.contracts as unknown as { number: string; customers: { full_name: string } }; return [formatDateBR(d.confirmed_at), c.number, c.customers.full_name, <Money key="m" cents={d.amount_cents} />, d.reference]; });
     return { title: "Desembolsos confirmados no período", cols: ["Data", "Contrato", "Cliente", "Valor", "Referência"], rows };
   }
   if (kind === "recebido") {
-    const { data } = await db.from("payments").select("applied_cents, amount_cents, paid_at, kind, created_by, installments!inner(number, contracts!inner(number, agent_id, customers(full_name), product_versions!inner(product_id)))").eq("status", "applied").gte("paid_at", `${from}T00:00:00-03:00`).lte("paid_at", `${to}T23:59:59-03:00`);
+    const { data } = await db.from("payments").select("applied_cents, amount_cents, paid_at, kind, created_by, installments!inner(number, contracts!inner(number, agent_id, customers(full_name), product_versions(product_id)))").eq("status", "applied").gte("paid_at", `${from}T00:00:00-03:00`).lte("paid_at", `${to}T23:59:59-03:00`);
     const rows = (data ?? []).filter((p) => filt((p.installments as unknown as { contracts: never }).contracts, sp)).map((p) => { const i = p.installments as unknown as { number: number; contracts: { number: string; customers: { full_name: string } } }; return [formatDateBR(p.paid_at), i.contracts.number, i.contracts.customers.full_name, `${i.number}ª`, <Money key="m" cents={p.applied_cents} />, p.created_by ? "manual" : "automática"]; });
     return { title: "Recebimentos no período", cols: ["Data", "Contrato", "Cliente", "Parcela", "Aplicado", "Baixa"], rows };
   }
@@ -135,7 +135,7 @@ async function listFor(kind: string, from: string, to: string, sp: Filters, toda
     d7: [today, format(addDays(t, 6), "yyyy-MM-dd"), "A receber em 7 dias"], d15: [today, format(addDays(t, 14), "yyyy-MM-dd"), "A receber em 15 dias"], d30: [today, format(addDays(t, 29), "yyyy-MM-dd"), "A receber em 30 dias"],
   };
   const r = ranges[kind]; if (!r) return null;
-  let qb = db.from("installments").select("id, number, due_date, amount_cents, paid_cents, status, contracts!inner(number, agent_id, customers(full_name), product_versions!inner(product_id))").in("status", ["open", "partial"]).order("due_date");
+  let qb = db.from("installments").select("id, number, due_date, amount_cents, paid_cents, status, contracts!inner(number, agent_id, customers(full_name), product_versions(product_id))").in("status", ["open", "partial"]).order("due_date");
   if (r[0]) qb = qb.gte("due_date", r[0]); if (r[1]) qb = qb.lte("due_date", r[1]);
   const { data } = await qb;
   const rows = (data ?? []).filter((i) => filt(i.contracts as never, sp)).map((i) => { const c = i.contracts as unknown as { number: string; customers: { full_name: string } }; const d = daysOverdue(i.due_date); return [formatDateBR(i.due_date), c.number, c.customers.full_name, `${i.number}ª`, <Money key="m" cents={Number(i.amount_cents) - Number(i.paid_cents)} />, d > 0 ? `${d} dias` : "—", <StatusBadge key="s" status={i.status} />]; });

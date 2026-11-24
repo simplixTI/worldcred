@@ -86,9 +86,9 @@ export async function payCardAction(operationId: string, form: { token: string; 
   } catch (e) { return { error: (e as Error).message }; }
 }
 
-/** Cliente já cadastrado pede um novo crédito padrão: gera a proposta (vinculada ao agente que o indicou, se houver). */
-export async function requestLoanAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const s = await assertRole(["client"], { mfa: false });
+/** Cliente escolhe "prestações": gera a proposta de valor livre, vinculada ao agente indicador. */
+export async function chooseInstallmentsAction(principalCents: number, term: number): Promise<ActionState> {
+  await assertRole(["client"], { mfa: false });
   const supabase = await createClient();
   const { data: me } = await supabase.from("customers").select("id").maybeSingle();
   if (!me) return { error: "cadastro não encontrado" };
@@ -97,9 +97,9 @@ export async function requestLoanAction(_prev: ActionState, formData: FormData):
   let id: string;
   try {
     const { adminClient } = await import("@/lib/supabase/admin");
-    const { createAndSendProposal } = await import("@/lib/services/proposals");
+    const { createFlexibleProposal } = await import("@/lib/services/loan");
     const { data: link } = await adminClient().from("agent_customers").select("agent_id").eq("customer_id", me.id).order("created_at").limit(1).maybeSingle();
-    const r = await createAndSendProposal(link?.agent_id ?? null, me.id, String(formData.get("product_version_id")), Number(formData.get("term_months")), { skipSms: true });
+    const r = await createFlexibleProposal(link?.agent_id ?? null, me.id, principalCents, term);
     id = r.proposalId;
   } catch (e) { return { error: (e as Error).message }; }
   redirect(`/cliente/propostas/${id}?nova=1`);

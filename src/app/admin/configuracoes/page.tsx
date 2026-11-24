@@ -2,18 +2,24 @@ import { PageTitle, Alert } from "@/components/ui";
 import { getCollectionSettings, getSetting } from "@/lib/services/settings";
 import { adminClient } from "@/lib/supabase/admin";
 import { SettingsForm } from "./settings-form";
+import { ModalidadesForm } from "./modalidades-form";
+import { getLoanSettings } from "@/lib/services/loan";
+import { getCardSettings } from "@/lib/services/card";
 import { env } from "@/lib/env";
 import { ActionButton } from "@/components/action-button";
 import { saveSettings } from "../actions";
 
 export default async function AdminConfiguracoes() {
   const collection = await getCollectionSettings();
+  const loan = await getLoanSettings();
+  const card = await getCardSettings();
   const security = await getSetting("security", { mfa_enforced: true });
   const pix = await getSetting("pix", { charge_ttl_hours: 24, receiver_account: "WC-SANDBOX-001" });
   const { data: lender } = await adminClient().from("lenders").select("*").eq("active", true).limit(1).maybeSingle();
   return (
     <>
-      <PageTitle title="Configurações" subtitle="Régua de cobrança, janela de envio, segurança e credor." />
+      <PageTitle title="Configurações" subtitle="Taxas e limites das modalidades, régua de cobrança, segurança e credor." />
+      <div className="card p-4 mb-4"><h2 className="font-semibold text-navy mb-1">Taxas e limites</h2><p className="text-xs text-muted mb-3">Valem para simulações e novas propostas. Contratos e propostas já geradas mantêm as condições originais.</p><ModalidadesForm loan={loan} card={card} /></div>
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card p-4"><h2 className="font-semibold text-navy mb-2">Régua de cobrança</h2><SettingsForm collection={collection} /></div>
         <div className="space-y-4">

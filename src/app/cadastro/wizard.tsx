@@ -4,22 +4,21 @@ import { motion, AnimatePresence } from "motion/react";
 import { selfSignupAction, publicLookupCpfAction, checkAgentCodeAction } from "./actions";
 import { Alert, Field } from "@/components/ui";
 import { Feedback } from "@/components/motion";
-import { formatBRL, formatRate } from "@/lib/finance/money";
+import { formatBRL } from "@/lib/finance/money";
+import { LoanPicker, useLoanQuote, type PickerLimits } from "@/components/loan-picker";
 import { isValidCPF, onlyDigits } from "@/lib/utils/mask";
 import { Check, Search, BadgeCheck } from "lucide-react";
 
-interface Product { id: string; principal: number; terms: number[]; rate: string; }
-interface Sim { pvId: string; term: number; installment: number; total: number; net: number; cet: string; last: number; }
 const EASE = [0.16, 1, 0.3, 1] as const;
 const STEPS = ["Crédito", "Seus dados", "Acesso"];
 
-export function SignupWizard({ products, sims, initialRef, agentFirstName, initialPrincipal, initialTerm }: { products: Product[]; sims: Sim[]; initialRef: string; agentFirstName: string | null; initialPrincipal: number; initialTerm: number }) {
+export function SignupWizard({ limits, rate, initialRef, agentFirstName, initialPrincipal, initialTerm }: { limits: PickerLimits; rate: string; initialRef: string; agentFirstName: string | null; initialPrincipal: number; initialTerm: number }) {
   const [step, setStep] = useState(0);
-  const first = products.find((p) => p.principal === initialPrincipal) ?? products[1] ?? products[0];
-  const [pvId, setPvId] = useState(first?.id ?? "");
-  const product = products.find((p) => p.id === pvId) ?? first;
-  const [term, setTerm] = useState(product?.terms.includes(initialTerm) ? initialTerm : product?.terms.includes(10) ? 10 : product?.terms[0] ?? 0);
-  const sim = sims.find((s) => s.pvId === pvId && s.term === term);
+  const clampP = (v: number) => Math.min(Math.max(Math.round(v / limits.step_cents) * limits.step_cents, limits.min_cents), limits.max_cents);
+  const clampT = (v: number) => Math.min(Math.max(v, limits.min_term), limits.max_term);
+  const [principal, setPrincipal] = useState(clampP(initialPrincipal || 200000));
+  const [term, setTerm] = useState(clampT(initialTerm || 10));
+  const sim = useLoanQuote(principal, term, rate);
   const [state, action, pending] = useActionState(selfSignupAction, undefined);
 
   // dados pessoais
@@ -50,12 +49,12 @@ export function SignupWizard({ products, sims, initialRef, agentFirstName, initi
   }
   useEffect(() => { if (state?.error) window.scrollTo({ top: 0, behavior: "smooth" }); }, [state]);
 
-  const canNext = step === 0 ? !!sim : step === 1 ? isValidCPF(vals.cpf) && vals.full_name.trim().length >= 5 && onlyDigits(vals.phone).length >= 10 && agent.ok !== false : true;
+  const canNext = step === 0 ? true : step === 1 ? isValidCPF(vals.cpf) && vals.full_name.trim().length >= 5 && onlyDigits(vals.phone).length >= 10 && agent.ok !== false : true;
 
   return (
     <form action={action} className="space-y-6">
       {/* campos persistidos em todos os passos */}
-      <input type="hidden" name="product_version_id" value={pvId} />
+      <input type="hidden" name="principal_cents" value={principal} />
       <input type="hidden" name="term_months" value={term} />
       <input type="hidden" name="agent_code" value={agent.code} />
       {step !== 1 && (<><input type="hidden" name="cpf" value={vals.cpf} /><input type="hidden" name="full_name" value={vals.full_name} /><input type="hidden" name="phone" value={vals.phone} /></>)}
@@ -77,25 +76,8 @@ export function SignupWizard({ products, sims, initialRef, agentFirstName, initi
         <motion.div key={step} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.3, ease: EASE }}>
           {step === 0 && (
             <section className="card p-6 space-y-5">
-              <div><h1 className="text-2xl font-extrabold text-navy">Quanto você precisa?</h1><p className="text-muted text-sm mt-1">Crédito padrão com parcelas fixas a {formatRate(product?.rate ?? "0.15")} ao mês. Sem tarifas escondidas.</p></div>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2" role="radiogroup" aria-label="Valor">
-                {products.map((p) => (
-                  <button type="button" key={p.id} role="radio" aria-checked={pvId === p.id} onClick={() => { setPvId(p.id); if (!p.terms.includes(term)) setTerm(p.terms[0]); }}
-                    className={`rounded-xl border px-2 py-3 text-sm font-bold tabular-nums transition-colors ${pvId === p.id ? "border-green bg-green-soft text-green" : "border-line hover:border-navy/40"}`}>{formatBRL(p.principal).replace(",00", "")}</button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Prazo">
-                {product?.terms.map((t) => (
-                  <button type="button" key={t} role="radio" aria-checked={term === t} onClick={() => setTerm(t)} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${term === t ? "border-navy bg-navy text-white" : "border-line hover:border-navy/40"}`}>{t}x</button>
-                ))}
-              </div>
-              {sim && (
-                <div className="rounded-2xl bg-navy text-white p-5 grid sm:grid-cols-[1fr_auto] gap-4 items-end">
-                  <div><div className="text-xs uppercase tracking-[0.12em] text-white/60">{term} parcelas de</div><div className="text-4xl font-extrabold tabular-nums leading-none mt-1">{formatBRL(sim.installment)}</div>{sim.last !== sim.installment && <div className="text-xs text-white/60 mt-1">última de {formatBRL(sim.last)}</div>}</div>
-                  <dl className="text-xs text-white/75 space-y-1 sm:text-right"><div><dt className="inline">Você recebe via Pix: </dt><dd className="inline font-bold text-white tabular-nums">{formatBRL(sim.net)}</dd></div><div><dt className="inline">Total: </dt><dd className="inline font-bold text-white tabular-nums">{formatBRL(sim.total)}</dd></div><div><dt className="inline">CET: </dt><dd className="inline font-bold text-white tabular-nums">{formatRate(sim.cet)} a.m.</dd></div></dl>
-                </div>
-              )}
-              <div className="rounded-xl border border-dashed border-line p-4 text-sm text-muted"><b className="text-navy">Crédito com o cartão</b> <span className="badge bg-warn-soft text-warn ml-1">em breve</span><br />Use o limite do cartão e receba via Pix, pagando na fatura. Avisaremos quando estiver disponível.</div>
+              <div><h1 className="text-2xl font-extrabold text-navy">Quanto você precisa?</h1><p className="text-muted text-sm mt-1">Arraste e veja a parcela na hora. Depois do cadastro você escolhe entre prestações via Pix ou cartão de crédito, com taxa menor.</p></div>
+              <LoanPicker limits={limits} rate={rate} principal={principal} term={term} onPrincipal={setPrincipal} onTerm={setTerm} />
             </section>
           )}
 
@@ -127,9 +109,9 @@ export function SignupWizard({ products, sims, initialRef, agentFirstName, initi
 
           {step === 2 && (
             <section className="card p-6 space-y-4">
-              <div><h1 className="text-2xl font-extrabold text-navy">Crie seu acesso</h1><p className="text-muted text-sm mt-1">Com ele você lê e aceita a proposta, cadastra a chave Pix e acompanha as parcelas.</p></div>
+              <div><h1 className="text-2xl font-extrabold text-navy">Crie seu acesso</h1><p className="text-muted text-sm mt-1">Com ele você escolhe como receber, cadastra a chave Pix e acompanha tudo.</p></div>
               <div className="rounded-xl bg-bg p-4 text-sm grid sm:grid-cols-2 gap-2">
-                <div><span className="text-muted">Crédito:</span> <b className="text-navy">{formatBRL(product?.principal ?? 0)} em {term}x de {formatBRL(sim?.installment ?? 0)}</b></div>
+                <div><span className="text-muted">Crédito:</span> <b className="text-navy">{formatBRL(principal)} em {term}x (prestação de {formatBRL(sim.regular_installment_cents)})</b></div>
                 <div><span className="text-muted">Nome:</span> <b className="text-navy">{vals.full_name}</b></div>
                 <div><span className="text-muted">Celular:</span> <b className="text-navy">{vals.phone}</b></div>
                 <div><span className="text-muted">Agente:</span> <b className="text-navy">{agent.ok ? `${agent.name} (${agent.code})` : "sem indicação"}</b></div>
@@ -146,7 +128,7 @@ export function SignupWizard({ products, sims, initialRef, agentFirstName, initi
         <button type="button" className="btn-outline" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || pending}>Voltar</button>
         {step < 2
           ? <button type="button" className="btn-green !px-6" disabled={!canNext} onClick={() => { if (step === 1 && agent.code && agent.ok === null) verifyAgent(agent.code); setStep(step + 1); }}>Continuar</button>
-          : <button className="btn-green !px-6" disabled={pending}>{pending ? "Criando sua conta…" : "Concluir e ver minha proposta"}</button>}
+          : <button className="btn-green !px-6" disabled={pending}>{pending ? "Criando sua conta…" : "Concluir e escolher como pagar"}</button>}
       </div>
     </form>
   );

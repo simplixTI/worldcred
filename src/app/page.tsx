@@ -3,35 +3,31 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getSession, homeFor } from "@/lib/auth";
-import { buildSchedule } from "@/lib/finance/price";
-import { Simulator, type SimProduct, type SimRow } from "@/components/landing/simulator";
+import { Simulator } from "@/components/landing/simulator";
 import { Stagger, Item } from "@/components/motion";
 import { getCardSettings } from "@/lib/services/card";
+import { getLoanSettings } from "@/lib/services/loan";
 import { Zap, ShieldCheck, Smartphone, CreditCard, FileCheck2, BadgeCheck, QrCode, MessageSquareText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "WorldCred · Crédito de R$ 1.000 a R$ 10.000 com Pix na conta",
+  title: "WorldCred · Crédito com Pix na conta",
   description: "Simule em segundos, aceite pelo celular e receba via Pix. Parcelas fixas, CET transparente e portal para acompanhar tudo.",
 };
-
-const FALLBACK = [100000, 200000, 300000, 500000, 1000000].map((p) => ({ principal_cents: p, monthly_rate: "0.15", allowed_terms: [3, 6, 10, 12], fee_cents: 0 }));
 
 export default async function Landing({ searchParams }: { searchParams: Promise<{ ref?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
-  const [session, { data: catalog }, agent] = await Promise.all([
+  const [session, loan, cardCfg, agent] = await Promise.all([
     getSession().catch(() => null),
-    supabase.rpc("wc_public_catalog"),
+    getLoanSettings(),
+    getCardSettings().catch(() => null),
     sp.ref ? (async () => { const r = await supabase.rpc("wc_public_agent_name", { p_slug: sp.ref }); return (r.data as string | null) ?? null; })().catch(() => null) : Promise.resolve(null),
   ]);
-  const cardLive = await getCardSettings().then((c) => c.live).catch(() => false);
-  const rows = (catalog && catalog.length ? catalog : FALLBACK) as { principal_cents: number; monthly_rate: string; allowed_terms: number[]; fee_cents: number }[];
-  const products: SimProduct[] = rows.map((r) => ({ principal: Number(r.principal_cents), terms: r.allowed_terms, rate: String(r.monthly_rate) })).sort((a, b) => a.principal - b.principal);
-  const sims: SimRow[] = rows.flatMap((r) => r.allowed_terms.map((t) => {
-    const s = buildSchedule({ principalCents: Number(r.principal_cents), monthlyRate: r.monthly_rate, termMonths: t, feeCents: Number(r.fee_cents) });
-    return { principal: Number(r.principal_cents), term: t, installment: s.regular_installment_cents, last: s.last_installment_cents, total: s.total_cents, net: s.net_cents, cet_monthly: s.cet_monthly, cet_annual: s.cet_annual, annual: s.annual_rate };
-  }));
+  const cardLive = !!cardCfg?.live;
+  const cardRate = cardCfg?.monthly_rate ?? "0.10";
+  const fmtPct = (r: string) => `${(Number(r) * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+  const fmtK = (c: number) => `R$ ${Math.round(c / 100).toLocaleString("pt-BR")}`;
 
   return (
     <div className="min-h-dvh bg-bg">
@@ -52,8 +48,8 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <div className="mx-auto max-w-6xl px-4 grid lg:grid-cols-[1.05fr_1fr] gap-10 items-center relative">
           <div>
             {agent && <div className="rise inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/20 px-3 py-1 text-xs mb-5"><BadgeCheck size={14} className="text-green-bright" /> Indicação de {agent}</div>}
-            <h1 className="rise rise-d1 text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight">Crédito de R$ 1.000 a R$ 10.000, <span className="text-green-bright">com Pix na conta</span>.</h1>
-            <p className="rise rise-d2 mt-5 text-white/75 text-lg md:text-xl leading-relaxed max-w-xl">Simule em segundos, aceite pelo celular e receba direto na sua chave Pix. Parcelas que não mudam e um portal para acompanhar tudo.</p>
+            <h1 className="rise rise-d1 text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight">Crédito de {fmtK(loan.min_cents)} a {fmtK(loan.max_cents)}, <span className="text-green-bright">com Pix na conta</span>.</h1>
+            <p className="rise rise-d2 mt-5 text-white/75 text-lg md:text-xl leading-relaxed max-w-xl">Escolha o valor, arraste o prazo de {loan.min_term} a {loan.max_term} vezes e veja a parcela na hora. Depois do cadastro, pague em prestações via Pix ou com o cartão, a uma taxa menor.</p>
             <div className="rise rise-d3 mt-7 flex flex-wrap gap-3">
               <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className="btn-green !px-6 !py-3 text-base">Quero crédito</Link>
               <a href="#como-funciona" className="btn bg-white/10 text-white ring-1 ring-white/20 hover:bg-white/20 !px-6 !py-3 text-base">Como funciona</a>
@@ -64,7 +60,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
               <li className="flex items-center gap-2"><Smartphone size={16} className="text-green-bright" /> Tudo pelo celular</li>
             </ul>
           </div>
-          <div className="rise rise-d2 text-ink"><Simulator products={products} sims={sims} refSlug={sp.ref ?? ""} /></div>
+          <div className="rise rise-d2 text-ink"><Simulator limits={loan} rate={loan.monthly_rate} refSlug={sp.ref ?? ""} /></div>
         </div>
       </section>
 
@@ -73,10 +69,10 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <p className="text-muted mt-3 max-w-2xl text-lg">Sem papelada e sem fila. Você acompanha cada etapa pelo portal.</p>
         <Stagger className="mt-10 grid md:grid-cols-4 gap-4">
           {[
-            { Icon: MessageSquareText, t: "Você se cadastra", d: "Escolhe o valor, informa seus dados e o ID do agente que indicou você. Três minutos." },
-            { Icon: FileCheck2, t: "Lê e aceita", d: "A proposta chega no seu portal com valor, parcelas, juros e CET. Aceite com um toque." },
-            { Icon: QrCode, t: "Recebe via Pix", d: "Aprovado, o dinheiro cai na sua chave Pix. Chave do seu CPF, validada pelo banco." },
-            { Icon: Smartphone, t: "Paga quando quiser", d: "Cada parcela tem QR Code e copia e cola. A baixa é automática." },
+            { Icon: MessageSquareText, t: "Você se cadastra", d: "Escolhe valor e prazo, informa seus dados e o ID de quem indicou você. Três minutos." },
+            { Icon: FileCheck2, t: "Escolhe como pagar", d: "Prestações via Pix, que passam por aprovação, ou cartão de crédito, com taxa menor e sem análise." },
+            { Icon: QrCode, t: "Recebe via Pix", d: "Aprovado, o dinheiro cai na chave Pix do seu CPF." },
+            { Icon: Smartphone, t: "Paga sem complicação", d: "Prestações por QR Code Pix com baixa automática; no cartão, só a fatura." },
           ].map((s, i) => (
             <Item key={s.t}>
               <div className="card p-6 h-full relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]">
@@ -94,7 +90,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid lg:grid-cols-2 gap-10 items-center">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold">O que você vê é o que você paga.</h2>
-            <p className="text-white/70 mt-4 text-lg leading-relaxed">Parcelas fixas pela Tabela Price, juros e CET exibidos antes do aceite, nenhuma tarifa escondida. As condições ficam congeladas no seu contrato: mudanças futuras no catálogo não afetam você.</p>
+            <p className="text-white/70 mt-4 text-lg leading-relaxed">Parcelas fixas pela Tabela Price, juros e CET exibidos antes do aceite, nenhuma tarifa escondida. Prestações a {fmtPct(loan.monthly_rate)} ao mês; cartão a {fmtPct(cardRate)} ao mês. As condições ficam congeladas no seu contrato: mudanças futuras no catálogo não afetam você.</p>
             <ul className="mt-6 space-y-3 text-white/85">
               {["Valor líquido que cai no Pix, parcela e total antes de aceitar", "Recibo de cada pagamento no portal", "Lembretes por SMS antes e depois do vencimento, sem ligações insistentes", "Seus dados protegidos: CPF e chave Pix mascarados, acesso só seu"].map((t) => (
                 <li key={t} className="flex items-start gap-3"><BadgeCheck size={18} className="text-green-bright shrink-0 mt-0.5" /> <span>{t}</span></li>
@@ -115,17 +111,17 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
         <div className="mt-8 grid md:grid-cols-2 gap-4">
           <div className="card p-6 md:p-8 border-green/40 relative overflow-hidden">
             <span className="badge bg-green-soft text-green">disponível agora</span>
-            <h3 className="text-2xl font-extrabold text-navy mt-3">Crédito padrão</h3>
-            <p className="text-muted mt-2 leading-relaxed">De R$ 1.000 a R$ 10.000, em 3 a 12 parcelas fixas a 15% ao mês. Dinheiro na sua chave Pix depois da aprovação.</p>
+            <h3 className="text-2xl font-extrabold text-navy mt-3">Prestações via Pix</h3>
+            <p className="text-muted mt-2 leading-relaxed">De {fmtK(loan.min_cents)} a {fmtK(loan.max_cents)}, de {loan.min_term} a {loan.max_term} parcelas fixas a {fmtPct(loan.monthly_rate)} ao mês. Dinheiro na chave Pix depois da aprovação.</p>
             <ul className="mt-4 space-y-1.5 text-sm text-ink">{["Parcelas fixas, sem surpresa", "CET mostrado antes de aceitar", "Pague cada parcela por QR Code Pix"].map((t) => <li key={t} className="flex items-center gap-2"><BadgeCheck size={16} className="text-green" />{t}</li>)}</ul>
             <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className="btn-green w-full mt-6 !py-3 text-base">Quero crédito padrão</Link>
           </div>
           <div className="card p-6 md:p-8 relative overflow-hidden">
             <span className={`badge ${cardLive ? "bg-green-soft text-green" : "bg-warn-soft text-warn"}`}>{cardLive ? "disponível agora" : "em breve"}</span>
             <h3 className="text-2xl font-extrabold text-navy mt-3">Crédito com o cartão</h3>
-            <p className="text-muted mt-2 leading-relaxed">Use o limite do seu cartão de crédito, receba o valor via Pix e pague na fatura. Operação com parceiro oficial; seus dados de cartão nunca passam pela WorldCred.</p>
-            <ul className="mt-4 space-y-1.5 text-sm text-ink">{["Sem parcelas Pix: paga na fatura", "Checkout seguro do parceiro", "Valor líquido e taxas mostrados antes"].map((t) => <li key={t} className="flex items-center gap-2"><CreditCard size={16} className="text-navy/60" />{t}</li>)}</ul>
-            <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className={`${cardLive ? "btn-green" : "btn-outline"} w-full mt-6 !py-3 text-base`}>{cardLive ? "Quero crédito com o cartão" : "Cadastrar e ser avisado"}</Link>
+            <p className="text-muted mt-2 leading-relaxed">Use o limite do cartão, receba o valor via Pix e pague na fatura, a {fmtPct(cardRate)} ao mês. Sem análise de crédito e sem cobrança mensal; o cartão é digitado só no Mercado Pago.</p>
+            <ul className="mt-4 space-y-1.5 text-sm text-ink">{["Taxa menor que as prestações", "Paga na fatura: sem parcelas Pix", "Cartão digitado só no Mercado Pago"].map((t) => <li key={t} className="flex items-center gap-2"><CreditCard size={16} className="text-navy/60" />{t}</li>)}</ul>
+            <Link href={sp.ref ? `/cadastro?ref=${encodeURIComponent(sp.ref)}` : "/cadastro"} className={`${cardLive ? "btn-green" : "btn-outline"} w-full mt-6 !py-3 text-base`}>{cardLive ? "Quero com o cartão" : "Cadastrar e ser avisado"}</Link>
           </div>
         </div>
       </section>

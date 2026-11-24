@@ -1,22 +1,21 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { activeProductVersions, simulate } from "@/lib/services/proposals";
+import { getLoanSettings } from "@/lib/services/loan";
 import { PageTitle, Alert } from "@/components/ui";
 import { LoanRequest } from "./request";
 
-export default async function ClienteCredito() {
+export default async function ClienteCredito({ searchParams }: { searchParams: Promise<{ valor?: string; prazo?: string }> }) {
+  const sp = await searchParams;
   const db = await createClient();
   const { data: pending } = await db.from("proposals").select("id, number, status").in("status", ["sent", "accepted", "approved"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  const versions = await activeProductVersions();
-  const products = versions.map((v) => ({ id: v.id, principal: v.products.principal_cents, terms: v.allowed_terms, rate: v.monthly_rate }));
-  const sims = versions.flatMap((v) => v.allowed_terms.map((t) => { const s = simulate(v, t); return { pvId: v.id, term: t, installment: s.regular_installment_cents, total: s.total_cents, net: s.net_cents, cet: s.cet_monthly, last: s.last_installment_cents }; }));
+  const limits = await getLoanSettings();
   return (
     <>
-      <PageTitle title="Pedir crédito" subtitle="Crédito padrão com parcelas fixas. Escolha o valor e o prazo; a proposta fica pronta para você ler e aceitar." />
+      <PageTitle title="Pedir crédito" subtitle="Escolha o valor e em quantas vezes. Na próxima tela você decide entre prestações via Pix ou cartão de crédito." />
       {pending ? (
         <Alert kind="info">Você já tem a proposta #{pending.number} em andamento. <Link href={`/cliente/propostas/${pending.id}`} className="underline font-semibold">Abrir proposta</Link></Alert>
       ) : (
-        <LoanRequest products={products} sims={sims} />
+        <LoanRequest limits={limits} rate={limits.monthly_rate} initialPrincipal={Number(sp.valor) || 0} initialTerm={Number(sp.prazo) || 0} />
       )}
     </>
   );
