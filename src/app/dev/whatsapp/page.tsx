@@ -6,6 +6,7 @@ import { getWhatsAppSettings } from "@/lib/services/messages";
 import { formatDateTimeBR } from "@/lib/finance/dates";
 import { maskPhone } from "@/lib/utils/mask";
 import { ActionButton } from "@/components/action-button";
+import { uazapiLastResponse } from "@/lib/messaging/uazapi";
 import { sendWhatsAppTest, refreshWhatsAppPairing } from "@/app/admin/actions";
 import { PairingPanel } from "./pairing";
 
@@ -21,6 +22,7 @@ export default async function DevWhatsApp() {
     adminClient().from("message_queue").select("*, customers(full_name)").eq("channel", "whatsapp").order("created_at", { ascending: false }).limit(25),
   ]);
   const provider = process.env.WA_PROVIDER || "mock";
+  const raw = provider === "uazapi" ? uazapiLastResponse() : null;
   return (
     <>
       <PageTitle title="WhatsApp" subtitle="Conexão do número, régua e últimas mensagens. O QR do Pix vai na própria mensagem." />
@@ -40,6 +42,8 @@ export default async function DevWhatsApp() {
             {status.detail && <Alert kind="warn">{status.detail}</Alert>}
             {!live && <Alert kind="info">Defina <code>WA_PROVIDER</code> e as credenciais na Vercel. Com <code>mock</code>, as mensagens ficam registradas aqui sem sair.</Alert>}
             <ActionButton label="Enviar teste para o meu número" action={sendWhatsAppTest} args={[]} prompt="Número com DDD (ex.: 11999998888):" className="btn-outline w-full" />
+            {raw && <details className="text-[11px] text-muted"><summary className="cursor-pointer">Última resposta do provedor</summary><pre className="mt-1 whitespace-pre-wrap break-all bg-bg rounded-lg p-2">{raw.path} · HTTP {raw.status}
+{raw.body}</pre></details>}
           </div>
           {p.pairingQr && <PairingPanel refresh={refreshWhatsAppPairing} />}
         </div>

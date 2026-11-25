@@ -1,6 +1,7 @@
 import "server-only";
 import type { Channel, ConnectionStatus, MessagingProvider, SendResult } from "./types";
 import { EvolutionWhatsApp, ZapiWhatsApp, CloudWhatsApp } from "./whatsapp";
+import { UazapiWhatsApp } from "./uazapi";
 import { adminClient } from "@/lib/supabase/admin";
 
 /** Simulado: registra no banco para conferência no painel DEV; número terminado em 0000 falha. */
@@ -56,7 +57,7 @@ let smsInstance: MessagingProvider | null = null;
 export function whatsappProvider(): MessagingProvider {
   if (waInstance) return waInstance;
   const p = (process.env.WA_PROVIDER || "mock").toLowerCase();
-  waInstance = p === "evolution" ? new EvolutionWhatsApp() : p === "zapi" ? new ZapiWhatsApp() : p === "cloud" ? new CloudWhatsApp() : new MockProvider("whatsapp");
+  waInstance = p === "uazapi" ? new UazapiWhatsApp() : p === "evolution" ? new EvolutionWhatsApp() : p === "zapi" ? new ZapiWhatsApp() : p === "cloud" ? new CloudWhatsApp() : new MockProvider("whatsapp");
   return waInstance;
 }
 
@@ -72,6 +73,7 @@ export function providerFor(channel: Channel): MessagingProvider {
 
 export function whatsappIsLive(): boolean {
   const p = (process.env.WA_PROVIDER || "mock").toLowerCase();
+  if (p === "uazapi") return !!process.env.WA_UAZAPI_URL && !!process.env.WA_UAZAPI_TOKEN;
   if (p === "evolution") return !!process.env.WA_EVOLUTION_URL && !!process.env.WA_EVOLUTION_KEY;
   if (p === "zapi") return !!process.env.WA_ZAPI_INSTANCE && !!process.env.WA_ZAPI_TOKEN;
   if (p === "cloud") return !!process.env.WA_CLOUD_TOKEN && !!process.env.WA_CLOUD_PHONE_ID;
