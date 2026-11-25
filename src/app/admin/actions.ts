@@ -7,6 +7,7 @@ import { runCollectionCycle } from "@/lib/services/collections";
 import { expireCharges } from "@/lib/services/charges";
 import { reconcilePendingDisbursements } from "@/lib/services/disbursements";
 import { mockPix } from "@/lib/pix";
+import { whatsappProvider } from "@/lib/messaging";
 import { processPixWebhook } from "@/lib/services/webhook";
 import { env } from "@/lib/env";
 
@@ -120,3 +121,32 @@ export const disburseCard = wrap(async (operationId: string) => {
   return r.status === "confirmed" ? "Pix enviado e confirmado." : r.status === "sent" ? "Pix enviado; aguardando confirmação." : r.status === "already" ? "Já estava desembolsada." : r.status === "timeout" ? "Tempo limite; consulte antes de reenviar." : `Falha: ${r.error}`;
 }, ["/admin/cartao"]);
 export const syncCard = wrap(async (paymentId: string) => { await admin(); const { syncCardPayment } = await import("@/lib/services/card"); const r = await syncCardPayment(paymentId); return `Mercado Pago: ${JSON.stringify(r)}`; }, ["/admin/cartao"]);
+
+// ---------- Baixa manual e WhatsApp ----------
+export const manualSettle = wrap(async (installmentId: string, note: string) => {
+  const s = await admin();
+  const { adminClient } = await import("@/lib/supabase/admin");
+  const { data: i } = await adminClient().from("installments").select("amount_cents, paid_cents").eq("id", installmentId).single();
+  if (!i) throw new Error("parcela não encontrada");
+  const remaining = Number(i.amount_cents) - Number(i.paid_cents);
+  const r = await rpc<{ outcome: string }>("wc_manual_settle", { p_installment: installmentId, p_amount_cents: remaining, p_actor: s.userId, p_note: note || "baixa manual pelo admin" });
+  return r.outcome === "already_paid" ? "Parcela já estava paga." : "Parcela baixada manualmente e registrada na auditoria.";
+}, ["/admin/cobranca", "/admin"]);
+
+export const sendWhatsAppTest = wrap(async (phone: string) => {
+  await admin();
+  const p = whatsappProvider();
+  const r = await p.sendText(phone, "WorldCred: teste de conexão do WhatsApp. Se você recebeu esta mensagem, a régua de cobrança está pronta para enviar o QR do Pix.");
+  if (!r.ok) throw new Error(r.error ?? "falha no envio");
+  return `Mensagem enviada por ${p.name}${r.providerMessageId ? ` (id ${r.providerMessageId})` : ""}.`;
+}, ["/dev/whatsapp"]);
+
+export async function refreshWhatsAppPairing(): Promise<{ error?: string; qr?: string; code?: string; state?: string }> {
+  try {
+    await admin();
+    const p = whatsappProvider();
+    if (!p.pairingQr) return { state: "Este provedor não usa pareamento por QR." };
+    const r = await p.pairingQr();
+    return { qr: r.qrBase64, code: r.pairingCode, state: r.state };
+  } catch (e) { return { error: (e as Error).message }; }
+}

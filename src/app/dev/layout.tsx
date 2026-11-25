@@ -11,6 +11,7 @@ export default async function DevLayout({ children }: { children: React.ReactNod
   return (
     <AppShell session={session} portalLabel="Painel DEV" nav={[
       { href: "/dev", label: "Ambiente" },
+      { href: "/dev/whatsapp", label: "WhatsApp" },
       { href: "/dev/auditoria", label: "Auditoria" },
       { href: "/dev/sandbox", label: "Sandbox" },
       { href: "/admin", label: "← Admin" },

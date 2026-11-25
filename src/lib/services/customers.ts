@@ -3,7 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { adminClient, rpc } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
 import { pixProvider } from "@/lib/pix";
-import { smsProvider } from "@/lib/sms";
+import { notifyCustomer } from "./notify";
 import { detectPixKeyType, isValidCPF, normalizePhoneBR, onlyDigits } from "@/lib/utils/mask";
 import { hashToken } from "./links";
 
@@ -35,8 +35,8 @@ export async function inviteCustomer(customerId: string): Promise<{ inviteUrl: s
   const token = randomBytes(18).toString("base64url");
   await db.from("customers").update({ invite_token_hash: hashToken(token), invite_expires_at: new Date(Date.now() + 7 * 86400_000).toISOString() }).eq("id", customerId);
   const inviteUrl = `${env.appUrl}/convite/${token}`;
-  const sms = await smsProvider().send(c.phone ?? "", `WorldCred: crie seu acesso ao portal para acompanhar sua proposta: ${inviteUrl}`);
-  await rpc("wc_audit", { p_action: "customer.invite", p_entity: "customers", p_entity_id: customerId, p_meta: { sms_ok: sms.ok } }).catch(() => {});
+  const sms = await notifyCustomer(c.phone ?? "", `Olá, ${(c.full_name || "").split(" ")[0]}! Crie seu acesso ao portal da WorldCred para acompanhar sua proposta: ${inviteUrl}`);
+  await rpc("wc_audit", { p_action: "customer.invite", p_entity: "customers", p_entity_id: customerId, p_meta: { ok: sms.ok, channel: sms.channel } }).catch(() => {});
   return { inviteUrl, sms };
 }
 

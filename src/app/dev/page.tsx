@@ -1,5 +1,6 @@
 import { PageTitle } from "@/components/ui";
 import { env } from "@/lib/env";
+import { whatsappIsLive } from "@/lib/messaging";
 import { adminClient } from "@/lib/supabase/admin";
 
 export default async function DevHome() {
@@ -16,6 +17,7 @@ export default async function DevHome() {
     ["Desembolso (Pix de saída)", env.pixProvider === "bacen" ? "real" : "simulado"],
     ["Mercado Pago", process.env.MP_ACCESS_TOKEN ? (process.env.MP_ACCESS_TOKEN.startsWith("TEST-") ? "credencial de teste" : "credencial de produção") : "não configurado"],
     ["Webhook MP", process.env.MP_WEBHOOK_SECRET ? "assinatura configurada" : "sem assinatura"],
+    ["WhatsApp", `${process.env.WA_PROVIDER || "mock"}${whatsappIsLive() ? " (credenciais ok)" : " (sem credenciais)"}`],
     ["SMS", env.smsProvider],
     ["Consulta CPF", process.env.VAULTLOGS_API_KEY ? "configurada" : "não configurada"],
     ["MFA (variável)", env.mfaEnforcement],

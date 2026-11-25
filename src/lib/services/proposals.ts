@@ -1,7 +1,7 @@
 import "server-only";
 import { adminClient, rpc } from "@/lib/supabase/admin";
 import { buildSchedule, type ScheduleSnapshot } from "@/lib/finance/price";
-import { smsProvider } from "@/lib/sms";
+import { notifyCustomer } from "./notify";
 import { getSetting } from "./settings";
 import { createPortalLink } from "./links";
 
@@ -67,6 +67,6 @@ export async function createAndSendProposal(agentId: string | null, customerId: 
   if (opts.skipSms) return { proposalId: p.id as string, number: p.number as number, smsOk: false };
   const { data: c } = await db.from("customers").select("phone").eq("id", customerId).single();
   const { url } = await createPortalLink(customerId, null, 72);
-  const sms = await smsProvider().send(c?.phone ?? "", `WorldCred: sua proposta de crédito está pronta para leitura e aceite: ${url}`);
+  const sms = await notifyCustomer(c?.phone ?? "", `Sua proposta de crédito da WorldCred está pronta para leitura e aceite: ${url}`);
   return { proposalId: p.id as string, number: p.number as number, smsOk: sms.ok };
 }

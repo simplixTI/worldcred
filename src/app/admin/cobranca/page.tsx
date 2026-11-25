@@ -2,7 +2,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { PageTitle, StatusBadge, Money, Empty, CASE_REASON } from "@/components/ui";
 import { daysOverdue, formatDateTimeBR } from "@/lib/finance/dates";
 import { ActionButton } from "@/components/action-button";
-import { caseAction, reviewClaim, runCollections } from "../actions";
+import { caseAction, reviewClaim, runCollections, manualSettle } from "../actions";
 import { CaseActions } from "./case-actions";
 
 export default async function AdminCobranca({ searchParams }: { searchParams: Promise<{ tipo?: string }> }) {
@@ -22,7 +22,7 @@ export default async function AdminCobranca({ searchParams }: { searchParams: Pr
   for (const m of queue ?? []) if (!lastMsg.has(m.installment_id)) lastMsg.set(m.installment_id, m);
   return (
     <>
-      <PageTitle title="Fila de cobrança" subtitle="Régua D0 / D+3 / D+7 por SMS; caso aberto em D+10. Separação por motivo." action={<ActionButton label="Executar régua agora" action={runCollections} args={[]} />} />
+      <PageTitle title="Fila de cobrança" subtitle="Régua por WhatsApp com o QR do Pix: véspera, vencimento e 2 dias depois. Caso aberto em D+10." action={<ActionButton label="Executar régua agora" action={runCollections} args={[]} />} />
       <div className="flex gap-2 mb-4 flex-wrap text-sm">
         <a href="/admin/cobranca" className={`badge ${!sp.tipo ? "bg-navy text-white" : "bg-surface border border-line"}`}>Todos ({cases?.length ?? 0})</a>
         {Object.entries(groups).map(([k, v]) => <a key={k} href={`/admin/cobranca?tipo=${k}`} className={`badge ${sp.tipo === k ? "bg-navy text-white" : "bg-surface border border-line"}`}>{v} ({(cases ?? []).filter((c) => groupOf(c.reason) === k).length})</a>)}
@@ -33,7 +33,7 @@ export default async function AdminCobranca({ searchParams }: { searchParams: Pr
             <tr key={k.id}><td>{(k.customers as unknown as { full_name: string }).full_name}<div className="text-xs text-muted">{ct?.number}</div></td><td>{i ? `${i.number}ª` : "—"}</td><td>{i ? <Money cents={i.amount_cents - i.paid_cents} /> : "—"}</td><td>{i && daysOverdue(i.due_date) > 0 ? `${daysOverdue(i.due_date)} dias` : "—"}</td><td>{ct?.profiles?.full_name ?? "—"}</td><td>{(k.assignee as unknown as { full_name: string } | null)?.full_name ?? <span className="text-muted">—</span>}</td>
               <td className="text-xs">{lm ? <><StatusBadge status={lm.status} /> <span className="text-muted">{lm.stage} · {lm.sent_at ? formatDateTimeBR(lm.sent_at) : "—"}</span>{lm.last_error && <div className="text-danger">{lm.last_error}</div>}</> : <span className="text-muted">nenhuma</span>}</td>
               <td><span className="font-semibold">{CASE_REASON[k.reason]}</span><div className="text-xs text-muted">{k.detail}</div>{k.pause_reason && <div className="text-xs text-warn">Pausa: {k.pause_reason} até {formatDateTimeBR(k.paused_until)}</div>}</td><td><StatusBadge status={k.status} /></td>
-              <td><CaseActions id={k.id} status={k.status} agents={agents ?? []} act={caseAction} /></td></tr>
+              <td><div className="flex flex-col gap-1"><CaseActions id={k.id} status={k.status} agents={agents ?? []} act={caseAction} />{i && <ActionButton label="Dar baixa manual" className="btn-outline !py-1 !px-2 text-xs" prompt="Como o pagamento foi recebido? (fica na auditoria)" confirm="Registrar o pagamento integral desta parcela fora do fluxo automático?" action={manualSettle} args={[i.id]} />}</div></td></tr>
           ); })}</tbody></table></div>
       )}
       {!!claims?.length && (

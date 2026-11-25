@@ -8,19 +8,23 @@ export interface CollectionSettings {
   window_end: string;
   review_pause_hours: number;
   channel: "sms" | "whatsapp";
+  fallback_sms: boolean;
+  confirm_on_payment: boolean;
   whatsapp_authorized: boolean;
   template: string;
 }
 
 export const DEFAULT_COLLECTION: CollectionSettings = {
-  stages: [{ code: "D0", offset_days: 0 }, { code: "D3", offset_days: 3 }, { code: "D7", offset_days: 7 }],
+  stages: [{ code: "D-1", offset_days: -1 }, { code: "D0", offset_days: 0 }, { code: "D2", offset_days: 2 }],
   case_after_days: 10,
   window_start: "08:00",
   window_end: "20:00",
   review_pause_hours: 48,
-  channel: "sms",
-  whatsapp_authorized: false,
-  template: "WorldCred: parcela {{n}} de {{total}} vence em {{due}}. Pague com Pix pelo portal: {{link}}",
+  channel: "whatsapp",
+  fallback_sms: true,
+  confirm_on_payment: true,
+  whatsapp_authorized: true,
+  template: "WorldCred: parcela {{n}} de {{total}} vence em {{due}}.",
 };
 
 export async function getSetting<T>(key: string, fallback: T): Promise<T> {
